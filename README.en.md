@@ -15,16 +15,16 @@ GitHub Pages: https://hiroshi57.github.io/hermes_agent_dashboard/
 |---------|-------------|
 | **Single file** | Everything in one `index.html` — easy to embed, customize, and sell |
 | **Zero build** | No webpack, no npm install. Works offline. |
-| **15 pages** | Complete dashboard coverage out of the box |
+| **20 pages** | Complete dashboard coverage out of the box |
 | **Fully rebrandable** | Change brand name, colors, and logo in one `BRAND_CONFIG` block |
 | **Demo data swap** | All sample data lives in one `DEMO_DATA` block — replace with your own in minutes |
 
-## Pages (15 screens)
+## Pages (20 screens)
 
 | Group | Pages |
 |-------|-------|
-| Operations | Status · Sessions · Kanban · Cron |
-| Agent | Profiles · Profile Builder · SOUL · Memory · Skills · MCP |
+| Operations | Status · Sessions · Kanban · Cron · Analytics · Logs Viewer |
+| Agent | Profiles · Profile Builder · SOUL · Memory · Skills · MCP · Chat |
 | Admin | Settings · Secrets · Channels · Security · Checkpoints |
 
 ## Highlights
@@ -118,5 +118,5 @@ hermes_agent_dashboard/
 | Edge    | 90+     | ✅ Full support |
 | Firefox | 88+     | ✅ Full support |
 | Safari  | 14+     | ✅ Full support |
-| iOS Safari | 14+ | ⚠️ Kanban drag requires pointer fallback (WIP) |
-| Android Chrome | 90+ | ⚠️ Same as above |
+| iOS Safari | 14+ | ✅ Kanban drag via Pointer Events fallback |
+| Android Chrome | 90+ | ✅ Kanban drag via Pointer Events fallback |
