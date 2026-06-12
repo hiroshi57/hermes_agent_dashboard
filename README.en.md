@@ -7,7 +7,8 @@ Originally designed to replicate the look and feel of **Nous Research Hermes Age
 
 Open `index.html` in any browser — no build step, no dependencies (only Google Fonts).
 
-GitHub Pages: https://hiroshi57.github.io/hermes_agent_dashboard/
+GitHub Pages: https://hiroshi57.github.io/hermes_agent_dashboard/  
+Vercel: https://hermesagentdashboard.vercel.app/
 
 ## Why this template?
 
