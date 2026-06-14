@@ -2130,6 +2130,14 @@ const I18N = {
     'page.channels':   'チャンネル',
     'page.security':   'セキュリティ',
     'page.checkpoints':'チェックポイント',
+    'cmd.toggle_lang':    '言語を切り替える (JA / EN)',
+    'cmd.toggle_theme':   'テーマを変更する',
+    'cmd.add_task':       'Kanban タスクを追加',
+    'cmd.export_settings':'設定をエクスポート',
+    'cmd.security_audit': 'セキュリティ監査を実行',
+    'cmd.export_chat':    '会話をエクスポート',
+    'cmd.group.action':   'アクション',
+    'cmd.empty':          '該当する項目がありません',
   },
   en: {
     'nav.group.ops':   'Operations',
@@ -2176,6 +2184,14 @@ const I18N = {
     'page.channels':   'Channels',
     'page.security':   'Security',
     'page.checkpoints':'Checkpoints',
+    'cmd.toggle_lang':    'Switch language (JA / EN)',
+    'cmd.toggle_theme':   'Change theme',
+    'cmd.add_task':       'Add Kanban task',
+    'cmd.export_settings':'Export settings',
+    'cmd.security_audit': 'Run security audit',
+    'cmd.export_chat':    'Export conversation',
+    'cmd.group.action':   'Action',
+    'cmd.empty':          'No matching items',
   },
 };
 
@@ -5871,15 +5887,33 @@ const CMDK_GROUP_OF = {
   settings:'admin', secrets:'admin', channels:'admin', security:'admin', checkpoints:'admin',
 };
 
+// パレットで実行できるアクション（ページ遷移以外）。run は引数なしの安全な操作のみ。
+function cmdkActions() {
+  return [
+    { key:'cmd.toggle_lang',     run:function(){ toggleLang(); } },
+    { key:'cmd.toggle_theme',    run:function(){ toggleThemePopup(); } },
+    { key:'cmd.add_task',        run:function(){ openAddTaskModal(); } },
+    { key:'cmd.export_settings', run:function(){ exportSettings(); } },
+    { key:'cmd.security_audit',  run:function(){ runSecurityAudit(); } },
+    { key:'cmd.export_chat',     run:function(){ chatExport(); } },
+  ];
+}
+
 function cmdkCommands() {
-  // NAV_PAGE_ORDER を正としてページ一覧を構築。ラベルは現在言語のページタイトル。
-  return NAV_PAGE_ORDER.map(function(id) {
+  // ページ一覧（NAV_PAGE_ORDER 基準、ラベルは現在言語のページタイトル）
+  const pages = NAV_PAGE_ORDER.map(function(id) {
     return {
-      page: id,
+      kind: 'page',
       label: t('page.' + id) || PAGE_TITLES[id] || id,
       group: t('nav.group.' + (CMDK_GROUP_OF[id] || 'ops')),
+      run: (function(pid){ return function(){ navigate(pid); }; })(id),
     };
   });
+  // アクション一覧
+  const actions = cmdkActions().map(function(a) {
+    return { kind: 'action', label: t(a.key), group: t('cmd.group.action'), run: a.run };
+  });
+  return pages.concat(actions);
 }
 
 function openCmdk() {
@@ -5913,18 +5947,21 @@ function renderCmdkResults() {
   if (!box) return;
   const q = (input ? input.value : '').trim().toLowerCase();
   cmdkMatches = cmdkCommands().filter(function(c) {
-    return q === '' || c.label.toLowerCase().indexOf(q) !== -1 || c.page.indexOf(q) !== -1;
+    return q === '' || c.label.toLowerCase().indexOf(q) !== -1;
   });
   if (cmdkActiveIndex >= cmdkMatches.length) cmdkActiveIndex = 0;
 
   if (cmdkMatches.length === 0) {
-    box.innerHTML = '<div class="cmdk-empty">該当するページがありません</div>';
+    box.innerHTML = '<div class="cmdk-empty">' + escHtml(t('cmd.empty') || '該当する項目がありません') + '</div>';
     return;
   }
+  // ページ用とアクション用でアイコンを分ける（アクションは稲妻アイコン）
+  const pageIco = '<svg class="cmdk-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>';
+  const actionIco = '<svg class="cmdk-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L3 9h4l-1 6 6-9H8l1-5z"/></svg>';
   box.innerHTML = cmdkMatches.map(function(c, i) {
     return '<div class="cmdk-item' + (i === cmdkActiveIndex ? ' active' : '') + '" role="option"' +
       ' data-idx="' + i + '" onmousemove="setCmdkActive(' + i + ')" onclick="selectCmdk(' + i + ')">' +
-      '<svg class="cmdk-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>' +
+      (c.kind === 'action' ? actionIco : pageIco) +
       '<span>' + escHtml(c.label) + '</span>' +
       '<span class="cmdk-group">' + escHtml(c.group) + '</span>' +
     '</div>';
@@ -5939,9 +5976,9 @@ function setCmdkActive(i) {
 
 function selectCmdk(i) {
   const c = cmdkMatches[i];
-  if (!c) return;
+  if (!c || typeof c.run !== 'function') return;
   closeCmdk();
-  navigate(c.page);
+  c.run();
 }
 
 function handleCmdkKeydown(e) {

@@ -44,8 +44,9 @@ Vercel: https://hermesagentdashboard.vercel.app/
 - **Step 4**: Review with live YAML preview (diff highlighting on change)
 
 ### Command Palette (⌘K / Ctrl+K)
-- Fuzzy-search every page from anywhere
-- Arrow keys + Enter to navigate; Escape to dismiss
+- Fuzzy-search every page **and key actions** (switch language, change theme,
+  add task, export settings/chat, run security audit) from anywhere
+- Arrow keys + Enter to run; Escape to dismiss
 - Labels follow the active language (i18n)
 
 ### Skills Catalog
