@@ -55,3 +55,4 @@
 - [x] 2026-06-12: OGP / favicon 追加（SVG favicon インライン、og:title/description/type、twitter:card）
 - [x] 2026-06-12: E2E スモークテスト追加（Playwright 5シナリオ・24テスト: 全ページ遷移・Kanban D&D・Builder フロー・テーマ切替・Chat TUI）
 - [x] 2026-06-12: i18n 対応（JA/EN トグルボタン、I18N オブジェクト 50キー、data-i18n 属性、applyLang()/t() ユーティリティ）
+- [x] 2026-06-14: コマンドパレット（⌘K / Ctrl+K）追加 — 全ページ横断のあいまい検索、↑↓/Enter で遷移、Escape で閉じる。i18n のページタイトルとグループラベルを再利用。? ヘルプにも追記

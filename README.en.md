@@ -43,6 +43,11 @@ Vercel: https://hermesagentdashboard.vercel.app/
 - **Step 3**: Skills + MCP configuration (178 skills, 15 categories with sidebar navigation)
 - **Step 4**: Review with live YAML preview (diff highlighting on change)
 
+### Command Palette (⌘K / Ctrl+K)
+- Fuzzy-search every page from anywhere
+- Arrow keys + Enter to navigate; Escape to dismiss
+- Labels follow the active language (i18n)
+
 ### Skills Catalog
 - 178 skills across 15 categories
 - Category sidebar + grouped display

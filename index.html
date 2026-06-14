@@ -684,6 +684,48 @@ tr:last-child td{border-bottom:none}
 .form-label{display:block;font-size:12px;font-weight:600;color:var(--cream-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
 .form-hint{font-size:11px;color:var(--cream-dim);margin-top:4px}
 
+/* ===== COMMAND PALETTE (⌘K) ===== */
+.cmdk-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:600;
+  display:none;align-items:flex-start;justify-content:center;
+  padding-top:12vh;
+}
+.cmdk-overlay.open{display:flex}
+.cmdk{
+  background:var(--panel2);
+  border:1px solid var(--line2);
+  border-radius:12px;
+  width:100%;max-width:520px;
+  box-shadow:0 16px 48px rgba(0,0,0,.5);
+  overflow:hidden;
+  animation:fadeIn .14s ease;
+}
+.cmdk-input{
+  width:100%;
+  background:transparent;border:none;outline:none;
+  color:var(--cream);
+  padding:16px 18px;
+  font-size:15px;font-family:var(--font-body);
+  border-bottom:1px solid var(--line);
+}
+.cmdk-input::placeholder{color:var(--cream-dim)}
+.cmdk-results{max-height:340px;overflow-y:auto;padding:6px}
+.cmdk-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;
+  font-size:13px;color:var(--cream);cursor:pointer;
+}
+.cmdk-item .cmdk-group{
+  margin-left:auto;font-size:10px;color:var(--cream-dim);
+  font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;
+}
+.cmdk-item .cmdk-ico{width:16px;height:16px;flex-shrink:0;color:var(--cream-dim)}
+.cmdk-item.active,.cmdk-item:hover{background:var(--teal-glow)}
+.cmdk-item.active .cmdk-ico,.cmdk-item:hover .cmdk-ico{color:var(--teal)}
+.cmdk-empty{padding:18px;text-align:center;color:var(--cream-dim);font-size:13px}
+
 /* ===== TOAST ===== */
 #toast-container{
   position:fixed;bottom:20px;right:20px;
@@ -2022,6 +2064,16 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 <div id="drawer-overlay"></div>
+
+<!-- COMMAND PALETTE (⌘K / Ctrl+K) -->
+<div class="cmdk-overlay" id="cmdk-overlay" onclick="handleCmdkOverlayClick(event)">
+  <div class="cmdk" role="dialog" aria-modal="true" aria-label="コマンドパレット">
+    <input class="cmdk-input" id="cmdk-input" type="text" autocomplete="off"
+      placeholder="ページを検索… (Esc で閉じる)" aria-label="ページを検索"
+      oninput="renderCmdkResults()" onkeydown="handleCmdkKeydown(event)">
+    <div class="cmdk-results" id="cmdk-results" role="listbox"></div>
+  </div>
+</div>
 
 <!-- TOAST CONTAINER -->
 <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
@@ -5726,13 +5778,24 @@ document.addEventListener('keydown', e => {
   const isEditing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
     || document.activeElement?.isContentEditable;
 
-  // Escape: ドロワー・モーダルを閉じる
+  // ⌘K / Ctrl+K: コマンドパレット（入力中でも有効）
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    toggleCmdk();
+    return;
+  }
+
+  // Escape: パレット・ドロワー・モーダルを閉じる
   if (e.key === 'Escape') {
+    if (cmdkOpen) { closeCmdk(); return; }
     if (state.openDrawerCardId) { closeDrawer(); return; }
     if (openModalId) { closeModal(openModalId); return; }
     closeThemePopup();
     return;
   }
+
+  // パレットが開いている間は他のショートカットを無効化（パレット側で処理）
+  if (cmdkOpen) return;
 
   // 入力中はショートカット無効
   if (isEditing) return;
@@ -5742,7 +5805,7 @@ document.addEventListener('keydown', e => {
     showToast(
       'キーボードショートカット',
       'info',
-      'j/k: 前後のページ  g+s: ステータス  g+k: Kanban  g+c: Chat  g+a: Analytics  g+p: プロファイル  /: 検索フォーカス  ?: このヘルプ'
+      '⌘K / Ctrl+K: コマンドパレット  j/k: 前後のページ  g+s: ステータス  g+k: Kanban  g+c: Chat  g+a: Analytics  g+p: プロファイル  /: 検索フォーカス  ?: このヘルプ'
     );
     return;
   }
@@ -5793,6 +5856,113 @@ document.addEventListener('keydown', e => {
     _gKeyTimer = setTimeout(() => { _gKeyPending = false; }, 1000);
   }
 });
+
+/* ================================================================
+   COMMAND PALETTE (⌘K)
+================================================================ */
+let cmdkOpen = false;
+let cmdkActiveIndex = 0;
+let cmdkMatches = [];
+
+// ページ → 所属グループ（i18n キー）。グループラベルはバッジ表示に使う。
+const CMDK_GROUP_OF = {
+  status:'ops', sessions:'ops', kanban:'ops', cron:'ops', analytics:'ops', logs:'ops', chat:'agent',
+  profiles:'agent', builder:'agent', soul:'agent', memory:'agent', skills:'agent', mcp:'agent',
+  settings:'admin', secrets:'admin', channels:'admin', security:'admin', checkpoints:'admin',
+};
+
+function cmdkCommands() {
+  // NAV_PAGE_ORDER を正としてページ一覧を構築。ラベルは現在言語のページタイトル。
+  return NAV_PAGE_ORDER.map(function(id) {
+    return {
+      page: id,
+      label: t('page.' + id) || PAGE_TITLES[id] || id,
+      group: t('nav.group.' + (CMDK_GROUP_OF[id] || 'ops')),
+    };
+  });
+}
+
+function openCmdk() {
+  const overlay = document.getElementById('cmdk-overlay');
+  if (!overlay) return;
+  cmdkOpen = true;
+  overlay.classList.add('open');
+  const input = document.getElementById('cmdk-input');
+  if (input) { input.value = ''; input.focus(); }
+  cmdkActiveIndex = 0;
+  renderCmdkResults();
+}
+
+function closeCmdk() {
+  const overlay = document.getElementById('cmdk-overlay');
+  if (overlay) overlay.classList.remove('open');
+  cmdkOpen = false;
+}
+
+function toggleCmdk() {
+  if (cmdkOpen) { closeCmdk(); } else { openCmdk(); }
+}
+
+function handleCmdkOverlayClick(e) {
+  if (e.target === document.getElementById('cmdk-overlay')) closeCmdk();
+}
+
+function renderCmdkResults() {
+  const input = document.getElementById('cmdk-input');
+  const box = document.getElementById('cmdk-results');
+  if (!box) return;
+  const q = (input ? input.value : '').trim().toLowerCase();
+  cmdkMatches = cmdkCommands().filter(function(c) {
+    return q === '' || c.label.toLowerCase().indexOf(q) !== -1 || c.page.indexOf(q) !== -1;
+  });
+  if (cmdkActiveIndex >= cmdkMatches.length) cmdkActiveIndex = 0;
+
+  if (cmdkMatches.length === 0) {
+    box.innerHTML = '<div class="cmdk-empty">該当するページがありません</div>';
+    return;
+  }
+  box.innerHTML = cmdkMatches.map(function(c, i) {
+    return '<div class="cmdk-item' + (i === cmdkActiveIndex ? ' active' : '') + '" role="option"' +
+      ' data-idx="' + i + '" onmousemove="setCmdkActive(' + i + ')" onclick="selectCmdk(' + i + ')">' +
+      '<svg class="cmdk-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>' +
+      '<span>' + escHtml(c.label) + '</span>' +
+      '<span class="cmdk-group">' + escHtml(c.group) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function setCmdkActive(i) {
+  cmdkActiveIndex = i;
+  const items = document.querySelectorAll('#cmdk-results .cmdk-item');
+  items.forEach(function(el, idx) { el.classList.toggle('active', idx === i); });
+}
+
+function selectCmdk(i) {
+  const c = cmdkMatches[i];
+  if (!c) return;
+  closeCmdk();
+  navigate(c.page);
+}
+
+function handleCmdkKeydown(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (cmdkMatches.length) { cmdkActiveIndex = (cmdkActiveIndex + 1) % cmdkMatches.length; refreshCmdkActive(); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (cmdkMatches.length) { cmdkActiveIndex = (cmdkActiveIndex - 1 + cmdkMatches.length) % cmdkMatches.length; refreshCmdkActive(); }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    selectCmdk(cmdkActiveIndex);
+  }
+}
+
+function refreshCmdkActive() {
+  const items = document.querySelectorAll('#cmdk-results .cmdk-item');
+  items.forEach(function(el, idx) { el.classList.toggle('active', idx === cmdkActiveIndex); });
+  const active = items[cmdkActiveIndex];
+  if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+}
 
 /* ================================================================
    INIT
