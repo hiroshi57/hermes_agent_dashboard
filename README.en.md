@@ -113,8 +113,13 @@ hermes_agent_dashboard/
 ├── README.md       ← Japanese documentation
 ├── README.en.md    ← This file
 ├── Next.tasks.md   ← Improvement task list
+├── docs/
+│   └── QA_CHECKLIST.md  ← Browser & device QA checklist
 └── skills/         ← Claude Code skill definitions (dev use)
 ```
+
+> 🧪 **QA:** Before shipping, run through [`docs/QA_CHECKLIST.md`](docs/QA_CHECKLIST.md)
+> — a page-by-page browser and mobile-device verification checklist.
 
 ## Browser Support
 

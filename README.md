@@ -19,6 +19,8 @@ hermes_agent_dashboard/
 ├── Next.tasks.md   ← 改善タスクリスト（外販レベルを目指す）
 ├── package.json    ← E2E テスト用（Playwright）
 ├── tests/          ← E2E スモークテスト
+├── docs/
+│   └── QA_CHECKLIST.md  ← 実ブラウザ／実機の動作検証チェックリスト
 └── skills/         ← 開発用 Claude Code スキル置き場
 ```
 
