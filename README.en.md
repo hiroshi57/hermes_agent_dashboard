@@ -16,11 +16,11 @@ Vercel: https://hermesagentdashboard.vercel.app/
 |---------|-------------|
 | **Single file** | Everything in one `index.html` — easy to embed, customize, and sell |
 | **Zero build** | No webpack, no npm install. Works offline. |
-| **20 pages** | Complete dashboard coverage out of the box |
+| **18 pages** | Complete dashboard coverage out of the box |
 | **Fully rebrandable** | Change brand name, colors, and logo in one `BRAND_CONFIG` block |
 | **Demo data swap** | All sample data lives in one `DEMO_DATA` block — replace with your own in minutes |
 
-## Pages (20 screens)
+## Pages (18 screens)
 
 | Group | Pages |
 |-------|-------|

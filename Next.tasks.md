@@ -48,9 +48,10 @@
 - [x] 2026-06-12: DEMO DATA セクション整備（全サンプルデータにスキーマコメント付き）
 - [x] 2026-06-12: Kanban タッチデバイス対応（pointer events フォールバック、iOS/Android でドラッグ可能）
 - [x] 2026-06-12: テーマ切替機能（6種: Hermes Teal / Midnight / Ember / Mono / Cyberpunk / Rosé、トップバー🎨ボタンで切替）
-- [x] 2026-06-12: Analytics ページ追加（18ページ目: 7/30/90日切替、KPI×4、日次バーチャート、モデル別内訳、エージェント別テーブル）
-- [x] 2026-06-12: Logs Viewer ページ追加（19ページ目: agent/errors/gateway 3ファイル、INFO/WARN/ERROR/DEBUG フィルタ、ライブテイルシミュレーション、ダウンロード）
-- [x] 2026-06-12: Chat TUI ページ追加（20ページ目: ストリーミング応答・ツール呼び出しブロック・Thinkingブロック・プロファイル切替・会話エクスポート）
+- [x] 2026-06-12: Analytics ページ追加（7/30/90日切替、KPI×4、日次バーチャート、モデル別内訳、エージェント別テーブル）
+- [x] 2026-06-12: Logs Viewer ページ追加（agent/errors/gateway 3ファイル、INFO/WARN/ERROR/DEBUG フィルタ、ライブテイルシミュレーション、ダウンロード）
+- [x] 2026-06-12: Chat TUI ページ追加（ストリーミング応答・ツール呼び出しブロック・Thinkingブロック・プロファイル切替・会話エクスポート）
+- [x] 2026-06-14: ページ数表記を実装の18ページに統一（OGP/Twitter meta・README 日英の見出し・タスクログの誤った採番を修正）
 - [x] 2026-06-12: キーボードナビゲーション強化（j/k で前後ページ、g+キー で直接ジャンプ、/ で検索フォーカス、? でヘルプ）
 - [x] 2026-06-12: OGP / favicon 追加（SVG favicon インライン、og:title/description/type、twitter:card）
 - [x] 2026-06-12: E2E スモークテスト追加（Playwright 5シナリオ・24テスト: 全ページ遷移・Kanban D&D・Builder フロー・テーマ切替・Chat TUI）
