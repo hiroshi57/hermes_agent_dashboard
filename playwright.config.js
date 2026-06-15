@@ -17,9 +17,33 @@ module.exports = defineConfig({
   },
 
   projects: [
+    // ── デスクトップ: 3ブラウザ（smoke テストのみ） ───────────
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/smoke.spec.js',
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: '**/smoke.spec.js',
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: '**/smoke.spec.js',
+    },
+
+    // ── モバイルエミュレーション（mobile テストのみ） ────────
+    {
+      name: 'mobile-ios',
+      use: { ...devices['iPhone 13'] },
+      testMatch: '**/mobile.spec.js',
+    },
+    {
+      name: 'mobile-android',
+      use: { ...devices['Pixel 5'] },
+      testMatch: '**/mobile.spec.js',
     },
   ],
 });
