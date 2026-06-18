@@ -63,20 +63,26 @@ OpenMythos サーバー (/v1/campaign, /v1/llmo, /v1/abtest, /v1/analytics)
 </script>
 ```
 
-## メインダッシュボードへの組み込み
+## メインダッシュボードへの組み込み(実装済み・opt-in)
 
-`index.html` の `DEMO DATA` セクション(`PROFILES_DATA` 等が定義されている箇所)を、
-OpenMythos からの実データに差し替えることで Analytics ビューを実データ化できます。例:
+`index.html` の Analytics ビューに、OpenMythos の LLMO ダッシュボードを実データで
+追記する**フックが組み込み済み**です。既定は無効で、有効化前・失敗時も既存表示は
+壊れません(graceful degradation)。
+
+有効化するには `index.html` 内の設定を編集します:
 
 ```js
-// 既存の固定 KPI を OpenMythos の LLMO ダッシュボードで置き換える
-const om = new OpenMythosClient();
-const dash = await om.getLLMODashboard('自社ブランド名');
-// dash.mention_rate / citation_rate / reference_rate を analytics-kpi に流し込む
+// index.html の renderAnalytics 付近
+const OM_LLMO = { enabled: true, brand: '自社ブランド名' };
 ```
 
-本番の `index.html` は単一ファイル + minify ビルド対象のため、まずは `openmythos-demo.html`
-で挙動を確認してから組み込むことを推奨します。
+有効時、Analytics の KPI グリッドに「LLMO 言及率 / 引用率 / 参照率」が追加されます
+(`GET /v1/llmo/dashboard/{brand}` を `/api/openmythos` 経由で取得)。
+
+> 注: `index.html` は単一ファイル + terser ビルド対象のため、外部 `assets/` を
+> 参照せず最小フックをインライン実装しています。クライアントの全機能を使う場合は
+> `assets/openmythos-client.js`(`openmythos-demo.html` 参照)を利用してください。
+> 有効化は OpenMythos バックエンド稼働 + Vercel env 設定後に行ってください。
 
 ## OpenMythos 側 API 対応表
 
