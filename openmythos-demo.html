@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenMythos 連携デモ — Hermes Agent Dashboard</title>
+<style>
+  :root{--bg:#14110e;--panel:#1d1813;--line:#3a3026;--cream:#f3ead9;--cream-dim:#a89a82;--teal:#5fb3a3;--amber:#d9a441}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--cream);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6}
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--cream-dim);font-size:13px;margin-bottom:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px}
+  .card h2{font-size:15px;margin:0 0 14px;color:var(--teal)}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--cream-dim);margin:10px 0 4px}
+  input,textarea{width:100%;background:#0f0c09;border:1px solid var(--line);border-radius:6px;color:var(--cream);padding:9px 11px;font-size:13px;font-family:inherit}
+  textarea{min-height:72px;resize:vertical}
+  button{margin-top:14px;background:var(--teal);color:#0f0c09;border:0;border-radius:6px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:wait}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .kpi{background:#0f0c09;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--cream-dim)}
+  .kpi-value{font-size:22px;font-weight:700;font-family:ui-monospace,monospace;color:var(--cream);margin-top:4px}
+  pre{background:#0f0c09;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font-size:12px;max-height:320px;white-space:pre-wrap;word-break:break-word}
+  .status{font-size:12px;margin-top:10px;min-height:16px}
+  .status.err{color:#e0816f}
+  .status.ok{color:var(--teal)}
+  .hint{font-size:11px;color:var(--cream-dim);margin-top:6px}
+  code{background:#0f0c09;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OpenMythos 連携デモ</h1>
+  <div class="sub">
+    ブラウザ → <code>/api/openmythos</code> プロキシ → OpenMythos。本番では Vercel env に
+    <code>OPENMYTHOS_BASE_URL</code> / <code>OPENMYTHOS_API_KEY</code> を設定してください。
+  </div>
+
+  <!-- 広告コピー生成 -->
+  <div class="card">
+    <h2>① 広告コピー生成 (POST /v1/campaign/workflow)</h2>
+    <label for="ad-name">キャンペーン名</label>
+    <input id="ad-name" value="夏の日焼け止めキャンペーン">
+    <label for="ad-scenario">シナリオ / ターゲット</label>
+    <textarea id="ad-scenario">敏感肌の30代女性向け。SPF50・無香料・うるおい重視を訴求。</textarea>
+    <button id="ad-generate">コピーを生成</button>
+    <div class="status" id="ad-status"></div>
+    <pre id="ad-result" hidden></pre>
+  </div>
+
+  <!-- LLMO ダッシュボード -->
+  <div class="card">
+    <h2>② LLMO ダッシュボード (GET /v1/llmo/dashboard/{brand})</h2>
+    <label for="llmo-brand">ブランド名</label>
+    <input id="llmo-brand" value="acme">
+    <button id="llmo-load">ダッシュボードを取得</button>
+    <div class="status" id="llmo-status"></div>
+    <div class="kpi-grid" id="llmo-kpis" hidden></div>
+    <pre id="llmo-result" hidden></pre>
+  </div>
+</div>
+
+<script src="assets/openmythos-client.js"></script>
+<script>
+  const om = new OpenMythosClient();
+
+  function setStatus(el, msg, kind) {
+    el.textContent = msg;
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  // ① 広告コピー生成
+  document.getElementById('ad-generate').addEventListener('click', async () => {
+    const btn = document.getElementById('ad-generate');
+    const out = document.getElementById('ad-result');
+    const st = document.getElementById('ad-status');
+    btn.disabled = true;
+    setStatus(st, '生成中…');
+    try {
+      const data = await om.generateAdCopy({
+        name: document.getElementById('ad-name').value,
+        scenario: document.getElementById('ad-scenario').value,
+        objective: 'awareness',
+      });
+      out.hidden = false;
+      out.textContent = JSON.stringify(data, null, 2);
+      setStatus(st, '生成しました', 'ok');
+    } catch (e) {
+      setStatus(st, e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ② LLMO ダッシュボード
+  document.getElementById('llmo-load').addEventListener('click', async () => {
+    const btn = document.getElementById('llmo-load');
+    const grid = document.getElementById('llmo-kpis');
+    const out = document.getElementById('llmo-result');
+    const st = document.getElementById('llmo-status');
+    btn.disabled = true;
+    setStatus(st, '取得中…');
+    try {
+      const data = await om.getLLMODashboard(document.getElementById('llmo-brand').value);
+      // 代表 KPI を抽出 (存在するものだけ表示)
+      const kpiKeys = ['mention_rate', 'citation_rate', 'reference_rate', 'llmo_score', 'snapshots'];
+      const cells = kpiKeys
+        .filter((k) => data && data[k] !== undefined)
+        .map((k) => {
+          let v = data[k];
+          if (typeof v === 'number' && v <= 1 && k.endsWith('_rate')) v = (v * 100).toFixed(1) + '%';
+          return `<div class="kpi"><div class="kpi-label">${k}</div><div class="kpi-value">${v}</div></div>`;
+        });
+      grid.innerHTML = cells.join('');
+      grid.hidden = cells.length === 0;
+      out.hidden = false;
+      out.textContent = JSON.stringify(data, null, 2);
+      setStatus(st, '取得しました', 'ok');
+    } catch (e) {
+      setStatus(st, e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

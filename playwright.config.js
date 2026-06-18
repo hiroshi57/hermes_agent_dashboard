@@ -45,5 +45,12 @@ module.exports = defineConfig({
       use: { ...devices['Pixel 5'] },
       testMatch: '**/mobile.spec.js',
     },
+
+    // ── OpenMythos 連携テスト (chromium のみ) ────────────────
+    {
+      name: 'openmythos',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/openmythos.spec.js',
+    },
   ],
 });
