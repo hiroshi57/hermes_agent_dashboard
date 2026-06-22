@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Agent — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1E1D;--panel:#102827;--panel2:#143230;
+  --line:rgba(238,231,213,.10);--line2:rgba(238,231,213,.18);
+  --cream:#EEE7D5;--cream-dim:#A2A899;
+  --teal:#2DD4BF;--teal-deep:#14B8A6;--teal-glow:rgba(45,212,191,.13);
+  --amber:#E5B567;--rose:#E2766B;--green:#7BC97E;--violet:#A78BDA;
+  --mono:'JetBrains Mono',monospace;--sans:'IBM Plex Sans JP',sans-serif;--r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--cream);font-size:14px;line-height:1.6;overflow:hidden}
+::selection{background:var(--teal);color:#06302B}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;color:var(--cream)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(238,231,213,.13);border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== layout ===== */
+.app{display:flex;height:100vh}
+.sidebar{width:230px;flex-shrink:0;background:#081717;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 15px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#14B8A6,#0E7D72);display:grid;place-items:center;box-shadow:0 0 18px rgba(20,184,166,.35)}
+.brand-mark svg{width:20px;height:20px}
+.brand h1{font-size:15px;font-weight:700;letter-spacing:.02em}
+.brand small{display:block;font-family:var(--mono);font-size:10px;color:var(--cream-dim);font-weight:400}
+.nav{display:flex;flex-direction:column;gap:1px;overflow-y:auto;padding-right:2px}
+.nav-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--cream-dim);padding:13px 9px 4px;text-transform:uppercase}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--cream-dim);padding:7px 9px;border-radius:8px;font-size:13px;font-weight:500;transition:.13s}
+.nav button:hover{color:var(--cream);background:rgba(238,231,213,.05)}
+.nav button.active{color:var(--teal);background:var(--teal-glow)}
+.nav button .ic{width:16px;height:16px;flex-shrink:0;opacity:.9}
+.nav .pill{margin-left:auto;font-family:var(--mono);font-size:9.5px;background:var(--teal);color:#06302B;border-radius:99px;padding:0 6px;font-weight:600}
+.nav .pill.warn{background:var(--amber)}
+.side-foot{margin-top:auto;padding:11px 8px 2px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--cream-dim)}
+.side-foot .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 8px var(--green)}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;flex-shrink:0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:13px;padding:0 22px;background:rgba(8,23,23,.6)}
+.topbar h2{font-size:15px;font-weight:600}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--cream-dim)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.profile-switch{display:flex;align-items:center;gap:7px;background:#0A1C1B;border:1px solid var(--line2);border-radius:99px;padding:4px 6px 4px 13px;font-size:12px}
+.profile-switch .lbl{color:var(--cream-dim);font-family:var(--mono);font-size:10px}
+.profile-switch select{background:none;border:none;font-size:12.5px;font-weight:600;color:var(--teal);cursor:pointer}
+.profile-switch select:focus{outline:none}
+.chip{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:99px;padding:3px 11px;color:var(--cream-dim);white-space:nowrap}
+.chip b{color:var(--teal);font-weight:600}
+.content{flex:1;overflow-y:auto;padding:22px 26px 70px}
+.page{display:none;max-width:1220px;margin:0 auto;animation:fadein .2s}
+.page.visible{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ===== shared ===== */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.card h3{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 .sub{font-family:var(--mono);font-size:10px;color:var(--cream-dim);font-weight:400;margin-left:auto}
+.grid{display:grid;gap:13px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.btn{background:var(--teal-deep);color:#06302B;border:none;border-radius:8px;padding:8px 17px;font-size:13px;font-weight:600;transition:.13s}
+.btn:hover{background:var(--teal)}
+.btn.ghost{background:none;border:1px solid var(--line2);color:var(--cream)}
+.btn.ghost:hover{border-color:var(--teal);color:var(--teal)}
+.btn.danger{background:none;border:1px solid rgba(226,118,107,.4);color:var(--rose)}
+.btn.danger:hover{border-color:var(--rose);background:rgba(226,118,107,.08)}
+.btn.sm{padding:4px 12px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.field label{font-size:12px;font-weight:600}
+.field .hint{font-size:11px;color:var(--cream-dim);font-weight:400}
+.field input,.field select,.field textarea{background:#0A1C1B;border:1px solid var(--line2);border-radius:8px;padding:8px 12px;font-size:13px;transition:.13s;width:100%}
+.field textarea{resize:vertical;min-height:74px;font-family:var(--mono);font-size:12px;line-height:1.75}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);outline:none}
+.mono{font-family:var(--mono)}
+.badge{font-family:var(--mono);font-size:10px;border-radius:5px;padding:2px 7px;font-weight:600;white-space:nowrap}
+.badge.teal{background:var(--teal-glow);color:var(--teal)}
+.badge.amber{background:rgba(229,181,103,.14);color:var(--amber)}
+.badge.green{background:rgba(123,201,126,.14);color:var(--green)}
+.badge.rose{background:rgba(226,118,107,.14);color:var(--rose)}
+.badge.violet{background:rgba(167,139,218,.14);color:var(--violet)}
+.badge.dim{background:rgba(238,231,213,.07);color:var(--cream-dim)}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;background:rgba(238,231,213,.15);border-radius:99px;border:none;transition:.2s}
+.toggle::after{content:'';position:absolute;top:2.5px;left:3px;width:15px;height:15px;border-radius:50%;background:var(--cream);transition:.2s}
+.toggle.on{background:var(--teal-deep)}
+.toggle.on::after{left:18px;background:#06302B}
+.toast{position:fixed;bottom:26px;right:26px;max-width:430px;background:var(--panel2);border:1px solid var(--teal);border-radius:10px;padding:12px 18px;font-size:13px;display:flex;gap:9px;align-items:flex-start;box-shadow:0 8px 30px rgba(0,0,0,.5);transform:translateY(90px);opacity:0;transition:.3s;z-index:99}
+.toast.show{transform:none;opacity:1}
+.toast .tic{color:var(--teal);font-weight:700}
+.kv-row{display:flex;align-items:center;gap:14px;padding:13px 4px;border-bottom:1px solid var(--line)}
+.kv-row:last-child{border:none}
+.kv-info{flex:1;min-width:0}
+.kv-info .k{font-family:var(--mono);font-size:12px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kv-info .d{font-size:11.5px;color:var(--cream-dim)}
+.kv-val{font-family:var(--mono);font-size:11px;color:var(--cream-dim);width:160px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.subtabs button{background:none;border:1px solid var(--line2);border-radius:99px;color:var(--cream-dim);padding:5px 14px;font-size:12px;font-weight:500;transition:.13s}
+.subtabs button:hover{color:var(--cream)}
+.subtabs button.active{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+.searchbar{display:flex;gap:10px;margin-bottom:16px}
+.searchbar input{flex:1;background:#0A1C1B;border:1px solid var(--line2);border-radius:8px;padding:8px 14px;font-size:13px}
+.searchbar input:focus{border-color:var(--teal);outline:none}
+.empty{color:var(--cream-dim);font-size:13px;padding:14px 4px}
+.code{background:#0A1C1B;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11.5px;line-height:1.8;overflow-x:auto;white-space:pre}
+.code .c{color:#5E7470}.code .t{color:var(--teal)}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(5,14,14,.7);backdrop-filter:blur(3px);display:none;place-items:center;z-index:50}
+.modal-bg.show{display:grid}
+.modal{background:var(--panel2);border:1px solid var(--line2);border-radius:14px;width:min(520px,92vw);max-height:86vh;overflow-y:auto;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.modal .m-sub{font-size:12px;color:var(--cream-dim);margin-bottom:16px}
+
+/* ===== status ===== */
+.stat-card .num{font-family:var(--mono);font-size:27px;font-weight:600;color:var(--teal);line-height:1.2}
+.stat-card .lbl{font-size:12px;color:var(--cream-dim);margin-top:2px}
+.sess-row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.sess-row:last-child{border:none}
+.sess-row .src{font-family:var(--mono);font-size:10px;width:62px;color:var(--cream-dim);flex-shrink:0}
+.sess-row .title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess-row .meta{font-family:var(--mono);font-size:11px;color:var(--cream-dim);flex-shrink:0}
+.bar-row{display:flex;align-items:flex-end;gap:5px;height:88px;padding-top:8px}
+.bar-row .bar{flex:1;background:var(--teal-deep);border-radius:3px 3px 0 0;opacity:.85;min-height:4px;transition:.2s}
+.bar-row .bar:hover{opacity:1;background:var(--teal)}
+.check-item{display:flex;gap:11px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+.check-item:last-child{border:none}
+.check-item .cb{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);flex-shrink:0;display:grid;place-items:center;font-size:10px;margin-top:2px}
+.check-item.done .cb{background:var(--teal-deep);border-color:var(--teal-deep);color:#06302B}
+.check-item.done .ct{color:var(--cream-dim);text-decoration:line-through}
+.check-item a{color:var(--teal);text-decoration:none;font-size:11px}
+.ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ops-grid button{background:#0A1C1B;border:1px solid var(--line2);border-radius:8px;color:var(--cream);padding:9px;font-size:12px;font-weight:500;transition:.13s;text-align:center}
+.ops-grid button:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ===== profiles ===== */
+.prof-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:9px;transition:.15s}
+.prof-card.current{border-color:var(--teal)}
+.prof-head{display:flex;align-items:center;gap:10px}
+.prof-ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:17px;flex-shrink:0;background:#0A1C1B;border:1px solid var(--line2)}
+.prof-name{font-family:var(--mono);font-size:14px;font-weight:600}
+.prof-desc{font-size:12px;color:var(--cream-dim);line-height:1.55;min-height:36px}
+.prof-meta{display:flex;gap:7px;flex-wrap:wrap}
+.prof-actions{display:flex;gap:7px;margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
+.prof-cmd{font-family:var(--mono);font-size:10.5px;color:var(--cream-dim);background:#0A1C1B;border-radius:6px;padding:5px 10px}
+.prof-cmd b{color:var(--amber);font-weight:500}
+
+/* ===== builder ===== */
+.builder{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.steps{display:flex;margin-bottom:18px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.step{flex:1;display:flex;align-items:center;gap:10px;padding:12px 15px;border:none;background:none;color:var(--cream-dim);font-size:13px;font-weight:600;border-right:1px solid var(--line);transition:.13s}
+.step:last-child{border-right:none}
+.step .n{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-family:var(--mono);font-size:11px;border:1.5px solid var(--line2)}
+.step.active{color:var(--cream);background:var(--teal-glow)}
+.step.active .n{border-color:var(--teal);color:var(--teal)}
+.step.done{color:var(--teal)}
+.step.done .n{background:var(--teal-deep);border-color:var(--teal-deep);color:#06302B}
+.step small{display:block;font-size:10px;font-weight:400;color:var(--cream-dim)}
+.bstep{display:none}
+.bstep.visible{display:block;animation:fadein .25s}
+.bnav{display:flex;justify-content:space-between;margin-top:16px}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(192px,1fr));gap:10px}
+.pick{text-align:left;background:#0A1C1B;border:1px solid var(--line2);border-radius:9px;padding:11px 13px;color:var(--cream);transition:.13s;position:relative}
+.pick:hover{border-color:rgba(45,212,191,.5)}
+.pick.sel{border-color:var(--teal);background:var(--teal-glow)}
+.pick.sel::after{content:'✓';position:absolute;top:8px;right:11px;color:var(--teal);font-weight:700;font-size:12px}
+.pick .pt{font-size:13px;font-weight:600;margin-bottom:1px}
+.pick .pd{font-size:11px;color:var(--cream-dim);line-height:1.5}
+.pick .pm{font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:4px;display:block}
+.yaml-pane{position:sticky;top:0}
+.yaml-pane .card{padding:0;overflow:hidden}
+.yaml-head{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:#0A1C1B;font-family:var(--mono);font-size:11px;color:var(--cream-dim)}
+.yaml-head .dots{display:flex;gap:5px;margin-right:4px}
+.yaml-head .dots i{width:9px;height:9px;border-radius:50%;background:rgba(238,231,213,.15)}
+.yaml-body{padding:15px 18px;font-family:var(--mono);font-size:11.5px;line-height:1.85;white-space:pre;overflow-x:auto;min-height:320px;max-height:56vh;overflow-y:auto}
+.yk{color:#7FB8B0}.yv{color:var(--cream)}.ys{color:var(--amber)}.yc{color:#5E7470}
+.yh{background:rgba(45,212,191,.16);border-radius:3px;transition:background .4s}
+.yaml-foot{padding:10px 16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--cream-dim)}
+.review-list{display:flex;flex-direction:column;gap:10px}
+.review-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:#0A1C1B;border:1px solid var(--line2);border-radius:9px}
+.review-item .ri-ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;background:var(--teal-glow);color:var(--teal);font-size:14px}
+.review-item .ri-k{font-size:11px;color:var(--cream-dim)}
+.review-item .ri-v{font-size:13px;font-weight:600}
+.review-item .ri-edit{margin-left:auto;align-self:center}
+.guard{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border:1px solid rgba(229,181,103,.35);background:rgba(229,181,103,.07);border-radius:9px;font-size:12px;margin-top:13px}
+.guard .g-ic{color:var(--amber);flex-shrink:0;font-size:15px}
+.guard.ok{border-color:rgba(123,201,126,.35);background:rgba(123,201,126,.06)}
+.guard.ok .g-ic{color:var(--green)}
+
+/* ===== kanban ===== */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.kcol{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;min-height:300px}
+.kcol.over{border-color:var(--teal);background:var(--panel2)}
+.kcol-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;padding:2px 4px 10px;color:var(--cream-dim)}
+.kcol-head .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;background:rgba(238,231,213,.08);border-radius:99px;padding:1px 8px}
+.kcard{background:#0A1C1B;border:1px solid var(--line2);border-radius:9px;padding:11px 12px;margin-bottom:9px;cursor:grab;transition:.13s}
+.kcard:hover{border-color:rgba(45,212,191,.5)}
+.kcard.dragging{opacity:.4}
+.kcard .kt{font-size:12.5px;font-weight:600;line-height:1.45;margin-bottom:7px}
+.kcard .kmeta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ===== memory / soul ===== */
+.mem-file{background:#0A1C1B;border:1px solid var(--line2);border-radius:9px;padding:14px 16px}
+.mem-file .mf-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.mem-file .mf-name{font-family:var(--mono);font-size:13px;font-weight:600}
+.mem-file pre{font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--cream-dim);white-space:pre-wrap;max-height:150px;overflow-y:auto}
+
+/* ===== channels ===== */
+.chan-row{display:flex;align-items:center;gap:13px;padding:13px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.chan-row .ci{width:36px;height:36px;border-radius:9px;background:#0A1C1B;border:1px solid var(--line2);display:grid;place-items:center;font-size:16px;flex-shrink:0}
+.chan-row .cn{font-size:13px;font-weight:600}
+.chan-row .cd{font-size:11px;color:var(--cream-dim);font-family:var(--mono)}
+
+/* ===== checkpoints ===== */
+.ckpt-row{display:flex;align-items:center;gap:13px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.ckpt-row:last-child{border:none}
+.ckpt-row .ck-ic{width:32px;height:32px;border-radius:8px;background:#0A1C1B;border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;flex-shrink:0;font-family:var(--mono);color:var(--teal)}
+
+/* ===== sessions ===== */
+.exp-msg{padding:9px 12px;border-left:2px solid var(--line2);margin:8px 0 8px 6px;font-size:12.5px}
+.exp-msg .role{font-family:var(--mono);font-size:10px;font-weight:600;margin-bottom:2px}
+.exp-msg.user .role{color:var(--amber)}.exp-msg.assistant .role{color:var(--teal)}.exp-msg.tool .role{color:var(--cream-dim)}
+.skill-card{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.skill-card .si{font-size:19px;flex-shrink:0;line-height:1.4}
+.skill-card .sn{font-size:13px;font-weight:600}
+.skill-card .sd{font-size:11.5px;color:var(--cream-dim);margin:2px 0 6px}
+.mcp-row{display:flex;align-items:center;gap:13px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.mcp-row .mi{width:34px;height:34px;border-radius:8px;background:#0A1C1B;border:1px solid var(--line2);display:grid;place-items:center;font-size:15px;flex-shrink:0}
+.mcp-row .mn{font-size:13px;font-weight:600}
+.mcp-row .mu{font-family:var(--mono);font-size:10.5px;color:var(--cream-dim)}
+
+@media(max-width:1080px){.kanban{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:980px){
+  .builder{grid-template-columns:1fr}.yaml-pane{position:static}
+  .g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}
+  .sidebar{width:62px}
+  .sidebar .brand h1,.sidebar .brand small,.sidebar .nav-label,.sidebar .nav button span.nl,.sidebar .side-foot,.nav .pill{display:none}
+  .topbar .chip{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#06302B" stroke-width="2.2" stroke-linecap="round">
+        <path d="M12 3v18M12 3l-4 4M12 3l4 4M7 13c-2.5 0-3.5-2-3.5-3.5S5 6.5 7 7.5c1.6.8 2.6 2.7 3 4M17 13c2.5 0 3.5-2 3.5-3.5S19 6.5 17 7.5c-1.6.8-2.6 2.7-3 4"/>
+      </svg>
+    </div>
+    <div><h1>Hermes Agent</h1><small>dashboard v1.5.0</small></div>
+  </div>
+  <nav class="nav" id="nav"></nav>
+  <div class="side-foot"><span class="dot"></span>gateway 稼働中 · :9119</div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <h2 id="pageTitle">ステータス</h2>
+    <span class="crumb" id="pageCrumb">~/.hermes</span>
+    <div class="right">
+      <div class="profile-switch">
+        <span class="lbl">PROFILE</span>
+        <select id="profileSel" onchange="switchProfile(this.value)"></select>
+      </div>
+      <span class="chip" id="chipModel">model <b>Hermes-4-405B</b></span>
+      <span class="chip"><span class="live-dot"></span><span id="chipSess">3</span> sessions</span>
+    </div>
+  </header>
+  <div class="content">
+
+  <!-- ============ STATUS ============ -->
+  <section class="page visible" id="page-status">
+    <div class="grid g4" style="margin-bottom:13px">
+      <div class="card stat-card"><div class="num">3</div><div class="lbl">アクティブセッション(5分以内)</div></div>
+      <div class="card stat-card"><div class="num" id="statProfiles">4</div><div class="lbl">プロファイル(うち3ゲートウェイ稼働)</div></div>
+      <div class="card stat-card"><div class="num">2.4M</div><div class="lbl">今月のトークン使用量 · $12.84</div></div>
+      <div class="card stat-card"><div class="num" style="color:var(--amber)">2件</div><div class="lbl">Kanban: 進行中のタスク</div></div>
+    </div>
+    <div class="grid g2" style="margin-bottom:13px">
+      <div class="card">
+        <h3>最近のセッション <span class="sub">5秒ごとに自動更新</span></h3>
+        <div id="recentSess"></div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:13px">
+          <h3>日次トークン使用量 <span class="sub">直近14日 · input + output</span></h3>
+          <div class="bar-row" id="tokenBars"></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--cream-dim);margin-top:6px"><span>5/29</span><span>6/11</span></div>
+          <div style="display:flex;gap:16px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12px;color:var(--cream-dim);flex-wrap:wrap">
+            <span>キャッシュヒット率 <b class="mono" style="color:var(--teal)">61%</b></span>
+            <span>1日平均 <b class="mono" style="color:var(--teal)">9.1</b> sessions</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>運用ショートカット <span class="sub">バックグラウンド実行 · ログをストリーム</span></h3>
+          <div class="ops-grid">
+            <button onclick="toast('doctor 完了 — 問題は見つかりませんでした(18項目チェック)')">🩺 doctor 実行</button>
+            <button onclick="toast('セキュリティ監査 完了 — 警告1件: ダッシュボードの外部公開設定を確認してください')">🛡 セキュリティ監査</button>
+            <button onclick="toast('バックアップを作成しました → hermes-backup-0611.tar.gz')">💾 バックアップ</button>
+            <button onclick="toast('ゲートウェイを再起動しました(3プロファイル)')">🔄 ゲートウェイ再起動</button>
+            <button onclick="toast('Skill Hub から 3件のスキルを更新しました')">⬆ スキル更新</button>
+            <button onclick="toast('システムプロンプト: 18.4KB(SOUL 2.1KB / skills 9.8KB / tools 6.5KB)')">📏 プロンプトサイズ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>セットアップチェックリスト <span class="sub">Learning Path — 5/7 完了</span></h3>
+      <div id="checklist"></div>
+    </div>
+  </section>
+
+  <!-- ============ PROFILES ============ -->
+  <section class="page" id="page-profiles">
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+      <button class="btn" onclick="openModal('newProfModal')">+ 新しいプロファイル</button>
+      <button class="btn ghost" onclick="openModal('distModal')">⬇ 配布物をインストール(git)</button>
+      <span style="font-size:12px;color:var(--cream-dim);margin-left:auto">各プロファイルは独立した <span class="mono">config.yaml / .env / SOUL.md / メモリ / セッション</span> を持つ別のエージェントです</span>
+    </div>
+    <div class="grid g2" id="profList"></div>
+    <div class="card" style="margin-top:14px">
+      <h3>マルチプロファイル運用のヒント</h3>
+      <div class="code"><span class="c"># 作成と同時にコマンドエイリアスが生成されます</span>
+<span class="t">hermes profile create</span> coder --description "コード読解とPRレビュー担当"
+<span class="t">coder</span> chat                        <span class="c"># そのまま専用コマンドとして使える</span>
+<span class="t">coder</span> gateway start               <span class="c"># プロファイルごとに別プロセスのゲートウェイ</span>
+<span class="c"># 同じBotトークンを2つのプロファイルで使うとトークンロックが衝突を検知してブロックします</span></div>
+    </div>
+  </section>
+
+  <!-- ============ BUILDER ============ -->
+  <section class="page" id="page-builder">
+    <div class="steps" id="stepBar">
+      <button class="step active" data-step="0"><span class="n">1</span><span>Identity / Model<small>役割・SOUL・使用モデル</small></span></button>
+      <button class="step" data-step="1"><span class="n">2</span><span>Skills + MCP<small>道具と外部接続</small></span></button>
+      <button class="step" data-step="2"><span class="n">3</span><span>Review<small>安全確認して完成</small></span></button>
+    </div>
+    <div class="builder">
+      <div>
+        <div class="bstep visible" id="bstep0">
+          <div class="card" style="margin-bottom:13px">
+            <h3>① エージェントの役割を定義 <span class="sub">SOUL.md に書き込まれます</span></h3>
+            <div class="field"><label>プロファイル名 <span class="hint">— コマンドエイリアスにもなります(例: <span class="mono">writer chat</span>)</span></label>
+              <input id="f_name" value="writer"></div>
+            <div class="field"><label>役割・目的(Identity)</label>
+              <textarea id="f_identity">記事・ドキュメント作成に特化したライティングアシスタント。構成案→ドラフト→推敲の順で進め、トーンは媒体に合わせて調整する。</textarea></div>
+            <div class="field"><label>説明(Kanbanオーケストレーター用) <span class="hint">— タスクの自動振り分けに使われます</span></label>
+              <input id="f_desc" value="記事執筆・校正・ドキュメント整備が得意"></div>
+          </div>
+          <div class="card">
+            <h3>② 使用するモデルとプロバイダー</h3>
+            <div class="pick-grid" id="modelGrid"></div>
+          </div>
+          <div class="bnav"><span></span><button class="btn" onclick="goStep(1)">次へ: Skills + MCP →</button></div>
+        </div>
+        <div class="bstep" id="bstep1">
+          <div class="card" style="margin-bottom:13px">
+            <h3>③ Skillsを選ぶ <span class="sub">Skill Hub から · 複数選択可</span></h3>
+            <div class="pick-grid" id="skillGrid"></div>
+          </div>
+          <div class="card">
+            <h3>④ MCPサーバーに接続 <span class="sub">Nous承認済みカタログ · 複数選択可</span></h3>
+            <div class="pick-grid" id="mcpGrid"></div>
+          </div>
+          <div class="bnav">
+            <button class="btn ghost" onclick="goStep(0)">← 戻る</button>
+            <button class="btn" onclick="goStep(2)">次へ: Review →</button>
+          </div>
+        </div>
+        <div class="bstep" id="bstep2">
+          <div class="card">
+            <h3>⑤ 構成を確認して完成 <span class="sub">ポリシー・権限・ガードレール</span></h3>
+            <div class="review-list" id="reviewList"></div>
+            <div class="guard"><span class="g-ic">⚠</span>
+              <div><b>承認モード: ask</b> — 危険なコマンドは実行前に毎回確認します。プロファイルはサンドボックスではないため、作業ディレクトリを固定する場合は <span class="mono">terminal.cwd</span> を絶対パスで指定してください。</div></div>
+            <div class="guard ok"><span class="g-ic">✓</span>
+              <div>すべての必須項目が設定されています。保存すると <span class="mono">~/.hermes/profiles/&lt;名前&gt;/</span> に独立したプロファイルが作成され、コマンドエイリアスが登録されます。</div></div>
+          </div>
+          <div class="bnav">
+            <button class="btn ghost" onclick="goStep(1)">← 戻る</button>
+            <button class="btn" onclick="finishProfile()">✓ プロファイルを作成</button>
+          </div>
+        </div>
+      </div>
+      <div class="yaml-pane">
+        <div class="card">
+          <div class="yaml-head"><span class="dots"><i></i><i></i><i></i></span><span id="yamlPath">~/.hermes/profiles/writer/config.yaml</span></div>
+          <div class="yaml-body" id="yamlBody"></div>
+          <div class="yaml-foot"><span class="live-dot"></span>入力に合わせてリアルタイム反映 — YAMLを手で書く必要はありません</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ KANBAN ============ -->
+  <section class="page" id="page-kanban">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn" onclick="addKanbanTask()">+ タスクを追加</button>
+      <span class="badge teal">自動オーケストレーション: ON</span>
+      <span style="font-size:12px;color:var(--cream-dim)">オーケストレーターが各プロファイルの「説明」を見てタスクを振り分けます。カードはドラッグで移動できます。</span>
+    </div>
+    <div class="kanban" id="kanban"></div>
+  </section>
+
+  <!-- ============ CRON ============ -->
+  <section class="page" id="page-cron">
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <button class="btn" onclick="openModal('cronModal')">+ ジョブを作成</button>
+      <span style="font-size:12px;color:var(--cream-dim);align-self:center">自然言語(「毎朝7時に」)またはcron式で指定 · 結果はローカル / Telegram / Discord / Slack / メールに配信</span>
+    </div>
+    <div class="card" id="cronList" style="padding:6px 18px"></div>
+  </section>
+
+  <!-- ============ SOUL ============ -->
+  <section class="page" id="page-soul">
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) 320px;align-items:start">
+      <div class="card">
+        <h3>SOUL.md — エージェントの人格 <span class="sub" id="soulPath">~/.hermes/profiles/default/SOUL.md</span></h3>
+        <div class="field">
+          <textarea id="soulText" style="min-height:300px"># Soul
+
+あなたは思慮深く、簡潔に話すアシスタント。
+
+## 原則
+- 一次情報を優先し、出典を添える
+- 確証のない情報は「推測」と明示する
+- 危険な操作の前には必ず確認を取る
+
+## トーン
+丁寧だが堅すぎない。絵文字は使わない。</textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="toast('SOUL.md を保存しました — 新しいセッションから反映されます(既存セッションは旧プロンプトのまま)')">保存</button>
+          <button class="btn ghost" onclick="toast('変更を破棄しました')">破棄</button>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:13px">
+          <h3>プリセット <span class="sub">/personality でセッション単位の切替も可</span></h3>
+          <div style="display:flex;flex-direction:column;gap:8px" id="soulPresets"></div>
+        </div>
+        <div class="card">
+          <h3>システムプロンプト内の位置</h3>
+          <p style="font-size:12px;color:var(--cream-dim);line-height:1.7">SOUL.md はシステムプロンプトの<b style="color:var(--cream)">先頭</b>に置かれる最重要のアイデンティティファイルです。プロジェクト側の <span class="mono">.hermes.md / AGENTS.md / CLAUDE.md</span> はこの後に読み込まれます。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MEMORY ============ -->
+  <section class="page" id="page-memory">
+    <div class="grid g2" style="margin-bottom:14px">
+      <div class="mem-file">
+        <div class="mf-head"><span class="mf-name">MEMORY.md</span><span class="badge teal">4.2 KB</span><span class="badge dim">エージェントの学習内容</span>
+          <button class="btn danger sm" style="margin-left:auto" onclick="toast('MEMORY.md をリセットしました')">リセット</button></div>
+        <pre>- リポジトリ hermes-docs は main 直 push 禁止。必ず PR 経由
+- ユーザーのタイムゾーンは JST。cron は JST 基準で組む
+- 画像生成は FLUX 2 Pro を既定にすると満足度が高い
+- 週次レポートのフォーマットは ①サマリー ②KPI ③次週予定</pre>
+      </div>
+      <div class="mem-file">
+        <div class="mf-head"><span class="mf-name">USER.md</span><span class="badge teal">1.8 KB</span><span class="badge dim">ユーザーについての記憶</span>
+          <button class="btn danger sm" style="margin-left:auto" onclick="toast('USER.md をリセットしました')">リセット</button></div>
+        <pre>- 名前: Yuki / 呼び方: さん付け不要
+- 平日 9-18 時は Slack より Telegram の方が反応が早い
+- 長い説明より箇条書き+結論先出しを好む</pre>
+      </div>
+    </div>
+    <div class="card">
+      <h3>外部メモリプロバイダー <span class="sub">組み込みメモリに加えてクロスセッションのユーザーモデリングを追加</span></h3>
+      <div class="pick-grid" id="memProviders"></div>
+      <p style="font-size:11.5px;color:var(--cream-dim);margin-top:12px">Honcho 有効時にプロファイルを <span class="mono">--clone</span> すると、同じユーザーワークスペースを共有しつつプロファイル専用のAIピアが作成され、各エージェントが独自の観察と人格を構築します。</p>
+    </div>
+  </section>
+
+  <!-- ============ CHECKPOINTS ============ -->
+  <section class="page" id="page-checkpoints">
+    <div class="grid g3" style="margin-bottom:14px">
+      <div class="card stat-card"><div class="num">23</div><div class="lbl">チェックポイント数</div></div>
+      <div class="card stat-card"><div class="num">148 MB</div><div class="lbl">シャドウストアのサイズ</div></div>
+      <div class="card stat-card"><div class="num" style="color:var(--green)">自動</div><div class="lbl">ファイル変更前にスナップショット</div></div>
+    </div>
+    <div class="card">
+      <h3>チェックポイント履歴 <span class="sub">/rollback でいつでも巻き戻せます</span>
+        <button class="btn ghost sm" style="margin-left:auto" onclick="toast('7日より古いチェックポイントを削除しました(-89 MB)')">古いものを整理</button></h3>
+      <div id="ckptList"></div>
+    </div>
+  </section>
+
+  <!-- ============ SESSIONS ============ -->
+  <section class="page" id="page-sessions">
+    <div class="searchbar">
+      <input id="sessSearch" placeholder="全メッセージを全文検索(FTS5)…" oninput="renderSessions()">
+      <button class="btn ghost" onclick="toast('30日より古い終了済みセッションを削除しました')">古いセッションを整理</button>
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;color:var(--cream-dim);flex-wrap:wrap">
+      <span>合計 <b class="mono" style="color:var(--cream)">128</b></span>
+      <span>アクティブ <b class="mono" style="color:var(--green)">3</b></span>
+      <span>アーカイブ <b class="mono" style="color:var(--cream)">41</b></span>
+      <span>総メッセージ <b class="mono" style="color:var(--cream)">6,204</b></span>
+    </div>
+    <div class="card" style="padding:6px 18px" id="sessList"></div>
+  </section>
+
+  <!-- ============ CONFIG ============ -->
+  <section class="page" id="page-config">
+    <div class="subtabs" id="cfgTabs"></div>
+    <div class="card" id="cfgBody"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn" onclick="toast('config.yaml に保存しました — 次回セッションから有効')">保存</button>
+      <button class="btn ghost" onclick="toast('デフォルト値に戻しました(未保存)')">デフォルトに戻す</button>
+      <button class="btn ghost" onclick="toast('config.json をダウンロードしました')">エクスポート</button>
+    </div>
+  </section>
+
+  <!-- ============ SECRETS ============ -->
+  <section class="page" id="page-keys">
+    <div class="subtabs" id="keyTabs"></div>
+    <div class="card" id="keyBody"></div>
+    <div class="card" style="margin-top:14px">
+      <h3>シークレットマネージャー連携 <span class="sub">.env に平文を置かない運用</span></h3>
+      <div class="kv-row">
+        <div class="kv-info"><div class="k">Bitwarden / Vaultwarden <span class="badge green">接続済み</span></div>
+        <div class="d"><span class="mono">{{bw:item/field}}</span> 構文で .env から参照。値は起動時に解決され、ディスクには残りません</div></div>
+        <button class="btn ghost sm" onclick="toast('Bitwarden Vault と同期しました — 6件のシークレットを解決')">同期</button>
+      </div>
+      <p style="font-size:11.5px;color:var(--cream-dim);margin-top:8px">キーの変更後はアクティブなCLIセッションで <span class="mono">/reload</span> を実行すると再起動なしで反映されます。</p>
+    </div>
+  </section>
+
+  <!-- ============ SKILLS ============ -->
+  <section class="page" id="page-skills">
+    <div class="searchbar">
+      <input id="skillSearch" placeholder="スキルを検索(名前・説明・カテゴリ)…" oninput="renderSkillsPage()">
+      <button class="btn ghost" onclick="toast('Skill Hub から 3 件のスキルを更新しました')">すべて更新</button>
+    </div>
+    <div class="subtabs" id="skillCats"></div>
+    <div class="grid g3" id="skillsList"></div>
+    <div class="card" style="margin-top:14px">
+      <h3>Skill Curator <span class="badge green">稼働中</span><span class="sub">バックグラウンドで自動メンテナンス · 24時間ごと</span></h3>
+      <div style="display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--cream-dim)">
+        最終実行: 6時間前 — 2件のスキルを更新、未使用1件を提案
+        <button class="btn ghost sm" style="margin-left:auto" onclick="toast('Curator を今すぐ実行しました')">今すぐ実行</button>
+        <button class="btn ghost sm" onclick="toast('Curator を一時停止しました')">一時停止</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MCP ============ -->
+  <section class="page" id="page-mcp">
+    <div class="grid" style="grid-template-columns:1fr;gap:10px;margin-bottom:22px" id="mcpList"></div>
+    <h3 style="font-size:13px;margin-bottom:10px">カタログから追加 <span class="mono" style="font-size:10px;color:var(--cream-dim)">— Nous承認済み optional-mcps/</span></h3>
+    <div class="grid g3" id="mcpCatalog"></div>
+  </section>
+
+  <!-- ============ CHANNELS ============ -->
+  <section class="page" id="page-channels">
+    <div class="grid g2" style="margin-bottom:16px" id="chanList"></div>
+    <div class="card">
+      <h3>ペアリング承認 <span class="sub">メッセージングユーザーのオンボーディング</span></h3>
+      <div id="pairList"></div>
+    </div>
+  </section>
+
+  <!-- ============ SECURITY ============ -->
+  <section class="page" id="page-security">
+    <div class="grid g2" style="margin-bottom:14px">
+      <div class="card">
+        <h3>危険コマンドの承認モード</h3>
+        <div class="pick-grid" style="grid-template-columns:repeat(3,1fr)" id="approvalPicks"></div>
+        <p style="font-size:11.5px;color:var(--cream-dim);margin-top:11px"><b style="color:var(--cream)">ask</b> を推奨。<span class="mono">rm -rf</span> や認証情報に触れるコマンドは実行前に確認ダイアログが出ます。</p>
+      </div>
+      <div class="card">
+        <h3>サンドボックスの注意</h3>
+        <p style="font-size:12.5px;line-height:1.75;color:var(--cream-dim)">プロファイルは状態を分離しますが、<b style="color:var(--amber)">ファイルシステムのサンドボックスではありません</b>。<span class="mono">local</span> バックエンドではユーザー権限と同じアクセス範囲を持ちます。隔離が必要な場合は <span class="mono">docker</span> バックエンドへ切り替え、作業ディレクトリは <span class="mono">terminal.cwd</span> を絶対パスで固定してください。</p>
+        <button class="btn ghost sm" style="margin-top:10px" onclick="toast('terminal.backend を docker に変更しました — 次回セッションから隔離環境で実行')">Dockerバックエンドに切替</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>セキュリティチェック <span class="sub">hermes security-audit と同等</span>
+        <button class="btn sm" style="margin-left:auto" onclick="runAudit()">監査を実行</button></h3>
+      <div id="auditList"></div>
+    </div>
+    <div class="card">
+      <h3>シェルフック <span class="sub">任意コマンドを実行するため同意ゲートつき</span></h3>
+      <div class="kv-row">
+        <div class="kv-info"><div class="k">on_session_end → notify-send <span class="badge green">同意済み</span></div><div class="d">セッション終了時にデスクトップ通知</div></div>
+        <button class="btn danger sm" onclick="toast('フックを削除しました')">削除</button>
+      </div>
+      <div class="guard" style="margin-top:10px"><span class="g-ic">⚠</span>
+        <div>フックは任意のコマンドを実行します。新規作成時は同意チェックが必須で、同意のないフックは発火しません。</div></div>
+    </div>
+  </section>
+
+  </div>
+</div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-bg" id="newProfModal">
+  <div class="modal">
+    <h3>新しいプロファイル</h3>
+    <p class="m-sub">独立した設定・メモリ・セッションを持つエージェントを作成します</p>
+    <div class="field"><label>名前</label><input id="np_name" placeholder="例: coder"></div>
+    <div class="field"><label>説明(Kanbanの自動振り分けに使用)</label><input id="np_desc" placeholder="例: コード読解とPRレビュー担当"></div>
+    <div class="field"><label>作成方法</label>
+      <select id="np_mode">
+        <option value="blank">空のプロファイル(バンドルスキルのみ)</option>
+        <option value="clone">--clone: 設定とSOULを複製(メモリ・セッションは新規)</option>
+        <option value="clone-all">--clone-all: すべて複製(完全なスナップショット)</option>
+      </select></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+      <button class="btn ghost" onclick="closeModals()">キャンセル</button>
+      <button class="btn" onclick="createProfileFromModal()">作成</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="distModal">
+  <div class="modal">
+    <h3>配布物をインストール</h3>
+    <p class="m-sub">gitリポジトリとして共有されたエージェント一式(SOUL・設定・スキル・cron・MCP)を導入します。認証情報・メモリ・セッションは含まれず、このマシン専用に管理されます。</p>
+    <div class="field"><label>リポジトリURL</label><input id="dist_url" placeholder="github.com/you/research-bot"></div>
+    <div class="field" style="flex-direction:row;align-items:center;gap:9px">
+      <button class="toggle on" id="dist_alias" onclick="this.classList.toggle('on')"></button>
+      <label style="margin:0">コマンドエイリアスを作成(--alias)</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+      <button class="btn ghost" onclick="closeModals()">キャンセル</button>
+      <button class="btn" onclick="installDist()">インストール</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="cronModal">
+  <div class="modal">
+    <h3>cronジョブを作成</h3>
+    <p class="m-sub">エージェントへのプロンプトを定期実行します</p>
+    <div class="field"><label>名前</label><input id="cj_name" placeholder="例: 朝のニュース要約"></div>
+    <div class="field"><label>プロンプト</label><textarea id="cj_prompt" placeholder="今日のAI関連ニュースを5件に要約して"></textarea></div>
+    <div class="grid g2">
+      <div class="field"><label>スケジュール(cron式)</label><input id="cj_sched" value="0 7 * * *"></div>
+      <div class="field"><label>配信先</label>
+        <select id="cj_deliver"><option>local</option><option>Telegram</option><option>Discord</option><option>Slack</option><option>メール</option></select></div>
+    </div>
+    <div class="field"><label>実行プロファイル</label>
+      <select id="cj_prof"></select></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+      <button class="btn ghost" onclick="closeModals()">キャンセル</button>
+      <button class="btn" onclick="createCronFromModal()">作成</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tic">✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ================= data ================= */
+const MODELS=[
+ {id:'hermes-4-405b',name:'Hermes 4 405B',provider:'Nous Portal',desc:'推論特化のフラッグシップ。長い自律タスク向け',meta:'nous-portal / reasoning: high'},
+ {id:'hermes-4-70b',name:'Hermes 4 70B',provider:'Nous Portal',desc:'速度とコストのバランス。日常運用の既定値',meta:'nous-portal / reasoning: medium'},
+ {id:'claude-sonnet',name:'Claude Sonnet 4.6',provider:'Anthropic',desc:'ツール呼び出しとコーディングに強い',meta:'anthropic / api-key 必須'},
+ {id:'deepseek-v3',name:'DeepSeek V3.2',provider:'OpenRouter',desc:'低コストで大量処理向け',meta:'openrouter / api-key 必須'},
+];
+const SKILLS=[
+ {id:'web-research',icon:'🔎',name:'web-research',cat:'AI',desc:'検索→巡回→出典付き要約のパイプライン',on:true},
+ {id:'pdf-toolkit',icon:'📄',name:'pdf-toolkit',cat:'文書',desc:'PDFの読取・結合・フォーム入力',on:true},
+ {id:'data-viz',icon:'📊',name:'data-viz',cat:'分析',desc:'CSV/JSONからチャートとレポートを生成',on:false},
+ {id:'browser-auto',icon:'🌐',name:'browser-automation',cat:'Web',desc:'Browserbase経由のブラウザ自動操作',on:false},
+ {id:'voice-mode',icon:'🎙️',name:'voice-mode',cat:'メディア',desc:'マイク入力と音声返答。Discord VC対応',on:false},
+ {id:'red-team',icon:'🛡️',name:'prompt-audit',cat:'Red Teaming',desc:'システムプロンプトの脆弱性チェック',on:false},
+ {id:'memory-plus',icon:'🧠',name:'memory-plus',cat:'AI',desc:'永続メモリの要約・剪定を自動化',on:true},
+ {id:'pr-review',icon:'🔀',name:'github-pr-review',cat:'開発',desc:'PRの差分レビューとコメント生成',on:true},
+ {id:'cron-report',icon:'⏰',name:'daily-digest',cat:'自動化',desc:'毎朝のニュース要約をcron配信',on:false},
+];
+const MCPS=[
+ {id:'github',icon:'🐙',name:'GitHub MCP',url:'https://mcp.github.com/sse',desc:'Issue・PR・リポジトリ操作',on:true,key:false},
+ {id:'gdrive',icon:'📁',name:'Google Drive',url:'https://drivemcp.googleapis.com/mcp/v1',desc:'ファイル検索・読み取り',on:true,key:false},
+ {id:'firecrawl',icon:'🔥',name:'Firecrawl',url:'https://mcp.firecrawl.dev/sse',desc:'構造化Webスクレイピング',on:false,key:true},
+ {id:'slack',icon:'💬',name:'Slack MCP',url:'stdio: npx slack-mcp',desc:'チャンネル投稿・検索',on:false,key:true},
+ {id:'postgres',icon:'🐘',name:'Postgres MCP',url:'stdio: npx pg-mcp',desc:'読み取り専用SQLクエリ',on:false,key:true},
+ {id:'tavily',icon:'🧭',name:'Tavily Search',url:'https://mcp.tavily.com/mcp',desc:'リサーチ向け検索API',on:false,key:true},
+];
+let PROFILES=[
+ {name:'default',icon:'🪽',desc:'メインの汎用アシスタント。日常タスク全般',model:'Hermes-4-405B',gw:true,sess:86,mem:'6.0 KB',current:true},
+ {name:'coder',icon:'⌨️',desc:'コード読解とPRレビュー担当。リポジトリの文脈を保持',model:'Claude-Sonnet-4.6',gw:true,sess:24,mem:'3.1 KB',current:false},
+ {name:'researcher',icon:'🔬',desc:'一次情報の調査と出典付き要約。外部docsの読解',model:'Hermes-4-405B',gw:true,sess:14,mem:'2.2 KB',current:false},
+ {name:'backup-0601',icon:'📦',desc:'6/1時点の完全スナップショット(--clone-all)',model:'Hermes-4-70B',gw:false,sess:86,mem:'6.0 KB',current:false},
+];
+const SESSIONS=[
+ {title:'競合3社の価格調査と比較表の作成',src:'CLI',prof:'researcher',model:'Hermes-4-405B',msgs:42,tools:18,ago:'2分前',live:true,
+  conv:[['user','SaaS競合3社の最新価格をまとめて'],['assistant','3社の公開価格ページを巡回します。まずFirecrawlで取得…'],['tool','firecrawl.scrape → 200 OK (3 pages)']]},
+ {title:'毎朝のAIニュースダイジェスト',src:'cron',prof:'default',model:'Hermes-4-70B',msgs:8,tools:5,ago:'3時間前',live:true,
+  conv:[['user','(cron 0 7 * * *) 今日のAI関連ニュースを要約'],['assistant','本日の主要トピックは3件。①推論モデルの新リリース…']]},
+ {title:'リポジトリのCI失敗原因の特定',src:'Telegram',prof:'coder',model:'Claude-Sonnet',msgs:31,tools:22,ago:'昨日',live:true,
+  conv:[['user','mainのCIが落ちてる。原因見て'],['tool','github.actions.logs → exit 1: type error in auth.ts'],['assistant','原因は auth.ts 84行目の型不一致です。修正PRを作成しますか?']]},
+ {title:'四半期レポートのドラフト作成',src:'CLI',prof:'default',model:'Hermes-4-405B',msgs:19,tools:7,ago:'2日前',live:false,
+  conv:[['user','Q2レポートの骨子を作って'],['assistant','構成案: ①サマリー ②KPI推移 ③主要施策…']]},
+ {title:'Notionの議事録をDriveへ移行',src:'Discord',prof:'default',model:'Hermes-4-70B',msgs:56,tools:40,ago:'4日前',live:false,
+  conv:[['user','先月分の議事録を全部Driveに'],['tool','gdrive.create_file × 23 → success']]},
+];
+let KANBAN=[
+ {col:0,title:'ドキュメントサイトの404リンクを洗い出す',prof:'researcher',pri:'低'},
+ {col:0,title:'新しいオンボーディング記事のドラフト',prof:'default',pri:'中'},
+ {col:1,title:'auth.ts のリファクタリングPRを作成',prof:'coder',pri:'高'},
+ {col:1,title:'競合価格調査(進行中のセッションと連動)',prof:'researcher',pri:'高'},
+ {col:2,title:'PR #214 のレビューコメント反映確認',prof:'coder',pri:'中'},
+ {col:3,title:'週次KPIレポート v3 を配信',prof:'default',pri:'—'},
+ {col:3,title:'cronジョブのタイムゾーンをJSTに統一',prof:'default',pri:'—'},
+];
+const KCOLS=['Backlog','進行中','レビュー','完了'];
+let CRONS=[
+ {name:'朝のニュース要約',prompt:'今日のAI関連ニュースを5件に要約して配信',sched:'0 7 * * *',deliver:'Telegram',prof:'default',state:'enabled',last:'今朝 7:00',next:'明朝 7:00'},
+ {name:'週次KPIレポート',prompt:'今週のセッション数・トークン使用量・主要タスクをまとめる',sched:'0 9 * * 1',deliver:'Slack',prof:'default',state:'enabled',last:'6/9(月)9:00',next:'6/15(月)9:00'},
+ {name:'依存パッケージの脆弱性チェック',prompt:'主要リポジトリの依存を監査し、重大度highのみ報告',sched:'0 3 * * *',deliver:'local',prof:'coder',state:'paused',last:'6/8 3:00',next:'—(一時停止中)'},
+];
+const CKPTS=[
+ {id:'a3f9e1',ago:'12分前',sess:'リポジトリのCI失敗原因の特定',files:'auth.ts ほか 3ファイル',size:'42 KB'},
+ {id:'77c2b0',ago:'1時間前',sess:'四半期レポートのドラフト作成',files:'report-q2.md',size:'18 KB'},
+ {id:'e01d44',ago:'昨日',sess:'Notionの議事録をDriveへ移行',files:'23ファイル',size:'1.2 MB'},
+ {id:'58aa97',ago:'2日前',sess:'設定ファイルの一括整形',files:'config.yaml, .env.example',size:'9 KB'},
+];
+const CHANNELS=[
+ {icon:'✈️',name:'Telegram',st:'connected',d:'@hermes_yuki_bot · 許可ユーザー2名'},
+ {icon:'🎮',name:'Discord',st:'connected',d:'Bot稼働中 · 1サーバー · VC音声対応'},
+ {icon:'💼',name:'Slack',st:'configured',d:'トークン設定済み · ゲートウェイ再起動で接続'},
+ {icon:'✉️',name:'メール',st:'off',d:'未設定 · IMAP/SMTPで送受信'},
+ {icon:'📱',name:'SMS (Twilio)',st:'off',d:'未設定 · 電話番号が必要'},
+ {icon:'🔗',name:'Webhook',st:'connected',d:'2ルート有効 · GitHub PRレビュー連携'},
+];
+const PAIRS=[
+ {platform:'Telegram',code:'KX7-Q2M',user:'@tanaka_dev',age:'5分前'},
+];
+const CFG={
+ 'model':[['default_model','hermes-4-405b','既定モデル','select',['hermes-4-405b','hermes-4-70b','claude-sonnet-4-6']],['provider','nous-portal','推論プロバイダー','select',['nous-portal','anthropic','openrouter']],['reasoning_effort','high','推論の深さ','select',['low','medium','high']],['fallback_provider','openrouter','フォールバックプロバイダー','select',['なし','openrouter','anthropic']]],
+ 'terminal':[['backend','local','実行バックエンド','select',['local','docker','ssh','modal']],['cwd','/home/yuki/work','作業ディレクトリ(絶対パス推奨)','text'],['timeout_seconds','120','コマンドタイムアウト(秒)','text']],
+ 'agent':[['max_iterations','40','最大反復回数','text'],['service_tier','standard','サービスティア','select',['standard','priority']],['gateway_timeout','300','ゲートウェイタイムアウト(秒)','text']],
+ 'delegation':[['max_concurrent','3','同時サブエージェント数','text'],['reasoning_effort','medium','サブエージェントの推論の深さ','select',['low','medium','high']],['restricted_toolsets','true','子のツールセットを制限','toggle']],
+ 'memory':[['provider','built-in','メモリプロバイダー','select',['built-in','honcho','mem0','supermemory']],['context_injection','true','コンテキスト自動注入','toggle']],
+ 'approvals':[['mode','ask','危険コマンドの承認','select',['ask','yolo','deny']],['mcp_first_use_confirm','true','MCPツール初回確認','toggle']],
+};
+const KEYS={
+ 'LLMプロバイダー':[['NOUS_PORTAL_TOKEN',true,'Nous Portal の推論・ツールゲートウェイ'],['ANTHROPIC_API_KEY',true,'Claudeモデル用'],['OPENROUTER_API_KEY',true,'フォールバック用'],['DEEPSEEK_API_KEY',false,'DeepSeekモデル用']],
+ 'ツールAPI':[['FIRECRAWL_API_KEY',true,'Webスクレイピング'],['BROWSERBASE_API_KEY',false,'ブラウザ自動化'],['FAL_API_KEY',true,'画像生成(FLUX 2 ほか)'],['ELEVENLABS_API_KEY',false,'音声合成(voice-mode)']],
+ 'メッセージング':[['TELEGRAM_BOT_TOKEN',true,'Telegramゲートウェイ'],['DISCORD_BOT_TOKEN',true,'Discordゲートウェイ'],['SLACK_BOT_TOKEN',true,'Slackゲートウェイ'],['TWILIO_AUTH_TOKEN',false,'SMSゲートウェイ']],
+};
+const MEMPROV=[
+ {id:'builtin',n:'組み込みのみ',d:'MEMORY.md / USER.md(有界・キュレーション)',sel:true},
+ {id:'honcho',n:'Honcho',d:'プロファイルごとのAIピア+共有ワークスペース',sel:false},
+ {id:'mem0',n:'Mem0',d:'ベクトル検索ベースの長期記憶',sel:false},
+ {id:'supermemory',n:'Supermemory',d:'クロスアプリのナレッジグラフ',sel:false},
+];
+const SOUL_PRESETS=[
+ ['📐 focused-coder','コードに集中。雑談なし、差分とテスト優先'],
+ ['🤝 friendly-helper','親しみやすく丁寧。初心者向けの説明を厚めに'],
+ ['🧊 minimal','一語で済むなら一語で。出力最小'],
+ ['🧪 research-rigor','出典必須・推測明示・反証も提示'],
+];
+const NAV=[
+ ['ops','運用',null],
+ ['status','ステータス','M3 13h4l2-6 4 12 2-6h6'],
+ ['sessions','セッション','M4 5h16v11H8l-4 4V5z'],
+ ['kanban','Kanban','M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v7h-4z','2'],
+ ['cron','Cron','M12 3a9 9 0 109 9M12 7v5l3 3M19 3l2 2'],
+ ['agent','エージェント',null],
+ ['profiles','プロファイル','M8 7a4 4 0 108 0 4 4 0 00-8 0zM3 21c0-4 4-6 9-6s9 2 9 6','4'],
+ ['builder','プロファイル作成','M12 4v16M5 8l7-4 7 4M5 8v4c0 5 3 7 7 8 4-1 7-3 7-8V8','NEW'],
+ ['soul','Personality / SOUL','M12 21s-7-4.5-9-9c-1.3-3 1-7 4.5-7 2 0 3.5 1 4.5 2.5C13 6 14.5 5 16.5 5 20 5 22.3 9 21 12c-2 4.5-9 9-9 9z'],
+ ['memory','メモリ','M9 3h6l1 3h3v5c0 6-4 9-7 10-3-1-7-4-7-10V6h3l1-3zM12 8v5M12 16h.01'],
+ ['skills','Skills','M9 3h6v4h4v6h-4v4H9v-4H5V7h4V3z'],
+ ['mcp','MCP接続','M6 4h12v7H6zM9 11v3M15 11v3M9 14h6M12 17v3'],
+ ['admin','管理',null],
+ ['config','設定 (config.yaml)','M12 8a4 4 0 100 8 4 4 0 000-8zM19 12h2M3 12h2M12 3v2M12 19v2M17.7 6.3l1.4-1.4M4.9 19.1l1.4-1.4M17.7 17.7l1.4 1.4M4.9 4.9l1.4 1.4'],
+ ['keys','シークレット','M15 7a5 5 0 11-4.9 6.1L4 19v2h3v-2h2v-2h2l1.9-1.9A5 5 0 0115 7z'],
+ ['channels','チャンネル','M4 6h16M4 12h16M4 18h10M19 16l2 2-2 2'],
+ ['security','セキュリティ','M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z','!'],
+ ['checkpoints','チェックポイント','M12 3a9 9 0 11-6.2 2.5M5 3v5h5M12 8v4l3 2'],
+];
+const TITLES={status:['ステータス','~/.hermes'],profiles:['プロファイル','hermes profile — 1台で複数の独立エージェント'],builder:['プロファイル作成','役割 → モデル → Skills → MCP → Review'],kanban:['Kanban','オーケストレーターがプロファイルへタスクを振り分け'],cron:['Cron','スケジュール実行 · 配信先を選択可'],soul:['Personality / SOUL','SOUL.md — システムプロンプトの先頭に置かれる人格'],memory:['メモリ','MEMORY.md / USER.md + 外部プロバイダー'],sessions:['セッション','全文検索 · FTS5'],config:['設定','config.yaml · 150+項目を自動検出'],keys:['シークレット','~/.hermes/.env + Bitwarden参照'],skills:['Skills','~/.hermes/skills/ + Skill Hub + Curator'],mcp:['MCP接続','config.yaml › mcp_servers'],channels:['チャンネル','メッセージングゲートウェイ + ペアリング'],security:['セキュリティ','承認モード · 監査 · フック'],checkpoints:['チェックポイント','変更前スナップショット · /rollback']};
+
+/* ============== state ============== */
+const P={name:'writer',identity:'記事・ドキュメント作成に特化したライティングアシスタント。構成案→ドラフト→推敲の順で進め、トーンは媒体に合わせて調整する。',desc:'記事執筆・校正・ドキュメント整備が得意',model:MODELS[1],skills:new Set(['web-research','pdf-toolkit']),mcps:new Set(['gdrive'])};
+let curStep=0,currentProfile='default';
+
+/* ============== helpers ============== */
+const $=id=>document.getElementById(id);
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+let toastT;
+function toast(msg){$('toastMsg').textContent=msg;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),3600)}
+function openModal(id){$(id).classList.add('show')}
+function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('show'))}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals()}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
+
+/* ============== nav ============== */
+const navEl=$('nav');
+NAV.forEach(([id,label,path,pill])=>{
+  if(!path){navEl.insertAdjacentHTML('beforeend',`<div class="nav-label">${label}</div>`);return}
+  const b=document.createElement('button');
+  if(id==='status')b.classList.add('active');
+  b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg><span class="nl">${label}</span>${pill?`<span class="pill ${pill==='!'?'warn':''}">${pill}</span>`:''}`;
+  b.onclick=()=>showPage(id,b);
+  navEl.appendChild(b);
+});
+function showPage(id,btn){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  else document.querySelectorAll('.nav button').forEach(b=>{if(b.textContent.includes(TITLES[id][0].split(' ')[0]))b.classList.add('active')});
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('visible'));
+  $('page-'+id).classList.add('visible');
+  $('pageTitle').textContent=TITLES[id][0];
+  $('pageCrumb').textContent=TITLES[id][1];
+}
+
+/* ============== profile switcher ============== */
+function renderProfileSel(){
+  $('profileSel').innerHTML=PROFILES.map(p=>`<option value="${p.name}" ${p.name===currentProfile?'selected':''}>${p.name}</option>`).join('');
+  $('cj_prof').innerHTML=PROFILES.map(p=>`<option>${p.name}</option>`).join('');
+}
+function switchProfile(name){
+  currentProfile=name;
+  PROFILES.forEach(p=>p.current=p.name===name);
+  const p=PROFILES.find(x=>x.name===name);
+  $('chipModel').innerHTML=`model <b>${p.model}</b>`;
+  $('soulPath').textContent=`~/.hermes/profiles/${name}/SOUL.md`;
+  renderProfiles();
+  toast(`プロファイルを「${name}」に切り替えました — 以降の表示と操作はこのプロファイルが対象です`);
+}
+
+/* ============== status ============== */
+$('recentSess').innerHTML=SESSIONS.map(s=>
+ `<div class="sess-row"><span class="src">${s.src}</span><span class="title">${s.live?'<span class="live-dot"></span>':''}${s.title}</span><span class="badge violet">${s.prof}</span><span class="meta">${s.msgs}msg · ${s.ago}</span></div>`).join('');
+const bars=[34,51,42,68,55,77,60,88,72,95,64,81,90,100];
+$('tokenBars').innerHTML=bars.map(h=>`<div class="bar" style="height:${h}%" title="${(h*2.1).toFixed(0)}k tokens"></div>`).join('');
+const CHECKS=[
+ [1,'インストールと初回セットアップ(hermes setup --portal)','quickstart'],
+ [1,'モデルとプロバイダーの設定','configuring-models'],
+ [1,'最初のチャットとTUIの操作','tui'],
+ [1,'Telegram/Discordゲートウェイの接続','messaging'],
+ [1,'Skillsの導入とSkill Hubの利用','work-with-skills'],
+ [0,'2つ目のプロファイルを作成してマルチエージェント運用','profiles'],
+ [0,'cronで定期タスクを自動化','automate-with-cron'],
+];
+$('checklist').innerHTML=CHECKS.map(([done,t,doc])=>
+ `<div class="check-item ${done?'done':''}"><span class="cb">${done?'✓':''}</span><span class="ct" style="flex:1">${t}</span><a href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noopener">docs ↗</a></div>`).join('');
+
+/* ============== profiles ============== */
+function renderProfiles(){
+  $('profList').innerHTML=PROFILES.map(p=>`
+   <div class="prof-card ${p.current?'current':''}">
+     <div class="prof-head">
+       <div class="prof-ic">${p.icon}</div>
+       <div><div class="prof-name">${p.name} ${p.current?'<span class="badge teal">使用中</span>':''}</div>
+       <div style="font-size:11px;color:var(--cream-dim)" class="mono">~/.hermes/profiles/${p.name}/</div></div>
+       <span class="badge ${p.gw?'green':'dim'}" style="margin-left:auto">${p.gw?'gateway 稼働':'gateway 停止'}</span>
+     </div>
+     <div class="prof-desc">${p.desc}</div>
+     <div class="prof-meta">
+       <span class="badge dim">${p.model}</span>
+       <span class="badge dim">${p.sess} sessions</span>
+       <span class="badge dim">memory ${p.mem}</span>
+     </div>
+     <div class="prof-cmd">$ <b>${p.name}</b> chat · <b>${p.name}</b> gateway start · <b>${p.name}</b> doctor</div>
+     <div class="prof-actions">
+       ${p.current?'':`<button class="btn sm" onclick="switchProfile('${p.name}');$('profileSel').value='${p.name}'">切り替え</button>`}
+       <button class="btn ghost sm" onclick="toast('${p.name} のゲートウェイを${p.gw?'停止':'起動'}しました')">${p.gw?'GW停止':'GW起動'}</button>
+       <button class="btn ghost sm" onclick="toast('${p.name}.tar.gz にエクスポートしました — 別マシンで hermes profile import できます')">エクスポート</button>
+       ${p.name==='default'?'':`<button class="btn danger sm" style="margin-left:auto" onclick="deleteProfile('${p.name}')">削除</button>`}
+     </div>
+   </div>`).join('');
+  $('statProfiles').textContent=PROFILES.length;
+  renderProfileSel();
+}
+function deleteProfile(name){
+  const typed=prompt(`プロファイル「${name}」を削除します。ゲートウェイ停止・サービス削除・全データ削除が行われます。\n確認のためプロファイル名を入力してください:`);
+  if(typed===name){PROFILES=PROFILES.filter(p=>p.name!==name);renderProfiles();toast(`プロファイル「${name}」を削除しました`)}
+  else if(typed!==null)toast('名前が一致しないため削除を中止しました');
+}
+function createProfileFromModal(){
+  const name=$('np_name').value.trim();if(!name)return toast('名前を入力してください');
+  const mode=$('np_mode').value;
+  PROFILES.push({name,icon:'🤖',desc:$('np_desc').value||'(説明未設定 — hermes profile describe で自動生成できます)',model:mode==='blank'?'Hermes-4-70B':'Hermes-4-405B',gw:false,sess:mode==='clone-all'?86:0,mem:mode==='clone-all'?'6.0 KB':'0 KB',current:false});
+  closeModals();renderProfiles();
+  toast(`プロファイル「${name}」を作成しました(${mode}) — コマンドエイリアス「${name}」が使えます`);
+}
+function installDist(){
+  const url=$('dist_url').value.trim();if(!url)return toast('リポジトリURLを入力してください');
+  const name=url.split('/').pop()||'imported';
+  PROFILES.push({name,icon:'📡',desc:'配布物からインストール — SOUL・設定・スキル・cron・MCPを同梱。認証情報とメモリはこのマシン専用',model:'Hermes-4-70B',gw:false,sess:0,mem:'0 KB',current:false});
+  closeModals();renderProfiles();
+  toast(`${url} から「${name}」をインストールしました — 更新は hermes profile update ${name}(メモリと.envは保持)`);
+}
+renderProfiles();
+
+/* ============== builder ============== */
+function goStep(n){
+  curStep=n;
+  document.querySelectorAll('#stepBar .step').forEach((s,i)=>{s.classList.toggle('active',i===n);s.classList.toggle('done',i<n)});
+  document.querySelectorAll('.bstep').forEach((b,i)=>b.classList.toggle('visible',i===n));
+  if(n===2)renderReview();
+  renderYaml();
+}
+document.querySelectorAll('#stepBar .step').forEach(s=>s.onclick=()=>goStep(+s.dataset.step));
+$('modelGrid').innerHTML=MODELS.map(m=>`<button class="pick ${P.model.id===m.id?'sel':''}" data-m="${m.id}"><div class="pt">${m.name}</div><div class="pd">${m.desc}</div><span class="pm">${m.meta}</span></button>`).join('');
+document.querySelectorAll('#modelGrid .pick').forEach(b=>b.onclick=()=>{
+  P.model=MODELS.find(m=>m.id===b.dataset.m);
+  document.querySelectorAll('#modelGrid .pick').forEach(x=>x.classList.toggle('sel',x===b));renderYaml('model')});
+$('skillGrid').innerHTML=SKILLS.slice(0,6).map(s=>`<button class="pick ${P.skills.has(s.id)?'sel':''}" data-s="${s.id}"><div class="pt">${s.icon} ${s.name}</div><div class="pd">${s.desc}</div><span class="pm">${s.cat}</span></button>`).join('');
+document.querySelectorAll('#skillGrid .pick').forEach(b=>b.onclick=()=>{const id=b.dataset.s;P.skills.has(id)?P.skills.delete(id):P.skills.add(id);b.classList.toggle('sel');renderYaml('skills')});
+$('mcpGrid').innerHTML=MCPS.map(m=>`<button class="pick ${P.mcps.has(m.id)?'sel':''}" data-c="${m.id}"><div class="pt">${m.icon} ${m.name}</div><div class="pd">${m.desc}</div><span class="pm">${m.key?'🔑 APIキー必要':'認証不要'}</span></button>`).join('');
+document.querySelectorAll('#mcpGrid .pick').forEach(b=>b.onclick=()=>{const id=b.dataset.c;P.mcps.has(id)?P.mcps.delete(id):P.mcps.add(id);b.classList.toggle('sel');renderYaml('mcps')});
+['f_name','f_identity','f_desc'].forEach(id=>$(id).addEventListener('input',e=>{
+  P[id==='f_name'?'name':id==='f_identity'?'identity':'desc']=e.target.value;
+  $('yamlPath').textContent=`~/.hermes/profiles/${P.name||'…'}/config.yaml`;
+  renderYaml('identity')}));
+function renderYaml(hl){
+  const sk=[...P.skills],mc=[...P.mcps].map(i=>MCPS.find(m=>m.id===i));
+  const idLines=esc(P.identity||'').match(/.{1,22}/g)||[''];
+  const h=k=>hl===k?' yh':'';
+  let y=`<span class="yc"># ${esc(P.name||'untitled')} — Profile Builderで生成</span>\n`;
+  y+=`<span class="yk${h('identity')}">profile:</span>\n  <span class="yk${h('identity')}">name:</span> <span class="ys${h('identity')}">${esc(P.name||'')}</span>\n`;
+  y+=`  <span class="yk${h('identity')}">description:</span> <span class="ys${h('identity')}">${esc(P.desc||'')}</span>\n`;
+  y+=`  <span class="yk${h('identity')}">soul:</span> <span class="yv">|</span>  <span class="yc"># → SOUL.md</span>\n`;
+  idLines.forEach(l=>y+=`    <span class="ys${h('identity')}">${l}</span>\n`);
+  y+=`<span class="yk${h('model')}">model:</span>\n  <span class="yk${h('model')}">default:</span> <span class="ys${h('model')}">${P.model.id}</span>\n`;
+  y+=`  <span class="yk${h('model')}">provider:</span> <span class="ys${h('model')}">${P.model.provider.toLowerCase().replace(' ','-')}</span>\n`;
+  y+=`<span class="yk${h('skills')}">skills:</span>${sk.length?'':' <span class="yv">[]</span>'}\n`;
+  sk.forEach(s=>y+=`  <span class="yv${h('skills')}">- </span><span class="ys${h('skills')}">${s}</span>\n`);
+  y+=`<span class="yk${h('mcps')}">mcp_servers:</span>${mc.length?'':' <span class="yv">{}</span>'}\n`;
+  mc.forEach(m=>{y+=`  <span class="yk${h('mcps')}">${m.id}:</span>\n    <span class="yk${h('mcps')}">url:</span> <span class="ys${h('mcps')}">${m.url}</span>\n    <span class="yk${h('mcps')}">enabled:</span> <span class="yv${h('mcps')}">true</span>\n`});
+  y+=`<span class="yk">approvals:</span>\n  <span class="yk">mode:</span> <span class="ys">ask</span>  <span class="yc"># 危険コマンドは毎回確認</span>`;
+  $('yamlBody').innerHTML=y;
+  if(hl)setTimeout(()=>document.querySelectorAll('.yh').forEach(e=>e.classList.remove('yh')),700);
+}
+function renderReview(){
+  const sk=[...P.skills],mc=[...P.mcps].map(i=>MCPS.find(m=>m.id===i).name);
+  const items=[['👤','Identity / SOUL',`${P.name} — ${P.identity.slice(0,36)}…`,0],['◆','Model',`${P.model.name}(${P.model.provider})`,0],['⭐','Skills',sk.length?sk.join(' · '):'未選択',1],['⛓','MCP接続',mc.length?mc.join(' · '):'未選択',1]];
+  $('reviewList').innerHTML=items.map(([ic,k,v,st])=>`<div class="review-item"><div class="ri-ic">${ic}</div><div><div class="ri-k">${k}</div><div class="ri-v">${v}</div></div><button class="btn ghost sm ri-edit" onclick="goStep(${st})">編集</button></div>`).join('');
+}
+function finishProfile(){
+  if(PROFILES.some(p=>p.name===P.name))return toast(`「${P.name}」は既に存在します — 別の名前にしてください`);
+  PROFILES.push({name:P.name,icon:'✍️',desc:P.desc,model:P.model.name,gw:false,sess:0,mem:'0 KB',current:false});
+  renderProfiles();
+  document.querySelectorAll('#stepBar .step').forEach(s=>s.classList.add('done'));
+  toast(`プロファイル「${P.name}」を作成しました — プロファイル一覧へ移動します`);
+  setTimeout(()=>showPage('profiles'),900);
+}
+renderYaml();
+
+/* ============== kanban ============== */
+function renderKanban(){
+  $('kanban').innerHTML=KCOLS.map((c,ci)=>{
+    const cards=KANBAN.filter(k=>k.col===ci);
+    return `<div class="kcol" data-col="${ci}" ondragover="kOver(event)" ondragleave="kLeave(event)" ondrop="kDrop(event)">
+      <div class="kcol-head">${c}<span class="cnt">${cards.length}</span></div>
+      ${cards.map(k=>{const idx=KANBAN.indexOf(k);return `<div class="kcard" draggable="true" data-i="${idx}" ondragstart="kStart(event)" ondragend="kEnd(event)">
+        <div class="kt">${k.title}</div>
+        <div class="kmeta"><span class="badge violet">→ ${k.prof}</span>${k.pri!=='—'?`<span class="badge ${k.pri==='高'?'rose':k.pri==='中'?'amber':'dim'}">優先度: ${k.pri}</span>`:''}</div>
+      </div>`}).join('')||'<div class="empty" style="font-size:12px">なし</div>'}
+    </div>`}).join('');
+}
+let dragI=null;
+function kStart(e){dragI=+e.target.dataset.i;e.target.classList.add('dragging')}
+function kEnd(e){e.target.classList.remove('dragging')}
+function kOver(e){e.preventDefault();e.currentTarget.classList.add('over')}
+function kLeave(e){e.currentTarget.classList.remove('over')}
+function kDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('over');
+  const col=+e.currentTarget.dataset.col;
+  if(dragI!==null&&KANBAN[dragI].col!==col){
+    KANBAN[dragI].col=col;renderKanban();
+    toast(`「${KANBAN[dragI].title.slice(0,18)}…」を ${KCOLS[col]} に移動 — 担当: ${KANBAN[dragI].prof}`);
+  }
+  dragI=null;
+}
+function addKanbanTask(){
+  const t=prompt('タスクの内容を入力(オーケストレーターが担当プロファイルを自動選択します):');
+  if(!t)return;
+  const pool=PROFILES.filter(p=>p.name!=='backup-0601');
+  const prof=pool[Math.floor(Math.random()*pool.length)].name;
+  KANBAN.push({col:0,title:t,prof,pri:'中'});renderKanban();
+  toast(`タスクを追加しました — 説明文との一致から「${prof}」に振り分けられました`);
+}
+renderKanban();
+
+/* ============== cron ============== */
+function renderCron(){
+  $('cronList').innerHTML=CRONS.map((c,i)=>`
+   <div class="kv-row">
+     <div class="kv-info">
+       <div class="k">${c.name} <span class="badge ${c.state==='enabled'?'green':'amber'}">${c.state==='enabled'?'有効':'一時停止'}</span><span class="badge violet">${c.prof}</span><span class="badge dim">→ ${c.deliver}</span></div>
+       <div class="d">${c.prompt}</div>
+       <div class="d mono" style="margin-top:2px">${c.sched} · 前回: ${c.last} · 次回: ${c.next}</div>
+     </div>
+     <button class="btn ghost sm" onclick="toast('「${c.name}」を今すぐ実行しました — 結果は ${c.deliver} に配信されます')">今すぐ実行</button>
+     <button class="btn ghost sm" onclick="CRONS[${i}].state=CRONS[${i}].state==='enabled'?'paused':'enabled';renderCron();toast('「${c.name}」を切り替えました')">${c.state==='enabled'?'一時停止':'再開'}</button>
+     <button class="btn danger sm" onclick="if(confirm('「${c.name}」を削除しますか?')){CRONS.splice(${i},1);renderCron();toast('削除しました')}">削除</button>
+   </div>`).join('')||'<div class="empty">cronジョブがありません。「+ ジョブを作成」から始めましょう。</div>';
+}
+function createCronFromModal(){
+  const name=$('cj_name').value.trim()||'無題のジョブ';
+  CRONS.push({name,prompt:$('cj_prompt').value||'(プロンプト未設定)',sched:$('cj_sched').value,deliver:$('cj_deliver').value,prof:$('cj_prof').value,state:'enabled',last:'—',next:'次のスケジュール時刻'});
+  closeModals();renderCron();toast(`cronジョブ「${name}」を作成しました`);
+}
+renderCron();
+
+/* ============== soul ============== */
+$('soulPresets').innerHTML=SOUL_PRESETS.map(([n,d])=>
+ `<button class="pick" style="width:100%" onclick="toast('プリセット「${n.slice(2)}」をSOUL.mdに適用しました — 保存すると次のセッションから反映')"><div class="pt">${n}</div><div class="pd">${d}</div></button>`).join('');
+
+/* ============== memory ============== */
+$('memProviders').innerHTML=MEMPROV.map(m=>
+ `<button class="pick ${m.sel?'sel':''}" onclick="document.querySelectorAll('#memProviders .pick').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');toast('メモリプロバイダーを「${m.n}」に変更しました')"><div class="pt">${m.n}</div><div class="pd">${m.d}</div></button>`).join('');
+
+/* ============== checkpoints ============== */
+$('ckptList').innerHTML=CKPTS.map(c=>
+ `<div class="ckpt-row">
+   <div class="ck-ic">⎌</div>
+   <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${c.files} <span class="mono" style="font-size:10px;color:var(--cream-dim)">#${c.id}</span></div>
+   <div style="font-size:11.5px;color:var(--cream-dim)">${c.sess} · ${c.ago} · ${c.size}</div></div>
+   <button class="btn ghost sm" onclick="toast('チェックポイント #${c.id} の差分を表示します')">差分</button>
+   <button class="btn sm" onclick="if(confirm('#${c.id} の状態に巻き戻しますか? 現在の変更もスナップショットされます。'))toast('#${c.id} にロールバックしました — 巻き戻し前の状態もチェックポイントに保存済み')">⎌ ロールバック</button>
+ </div>`).join('');
+
+/* ============== sessions ============== */
+function renderSessions(){
+  const q=($('sessSearch').value||'').toLowerCase();
+  const list=SESSIONS.filter(s=>(s.title+s.prof+s.conv.flat().join(' ')).toLowerCase().includes(q));
+  $('sessList').innerHTML=list.length?list.map((s,i)=>`
+   <div>
+     <div class="sess-row" style="cursor:pointer" onclick="const e=$('exp${i}');e.style.display=e.style.display==='block'?'none':'block'">
+       <span class="src">${s.src}</span>
+       <span class="title">${s.live?'<span class="live-dot"></span>':''}${s.title}</span>
+       <span class="badge violet">${s.prof}</span>
+       <span class="meta">${s.model} · ${s.msgs}msg · ${s.tools}tools · ${s.ago}</span>
+       <button class="btn ghost sm" onclick="event.stopPropagation();toast('セッションをJSONでエクスポートしました')">⤓</button>
+       <button class="btn ghost sm" onclick="event.stopPropagation();toast('TUIでセッションを再開します(--resume)')">▶</button>
+     </div>
+     <div id="exp${i}" style="display:none;padding:0 0 10px 74px">
+       ${s.conv.map(([r,m])=>`<div class="exp-msg ${r}"><div class="role">${r.toUpperCase()}</div>${m}</div>`).join('')}
+     </div>
+   </div>`).join(''):'<div class="empty">一致するセッションがありません。</div>';
+}
+renderSessions();
+
+/* ============== config ============== */
+let cfgCat='model';
+Object.keys(CFG).forEach(c=>{
+  const b=document.createElement('button');b.textContent=c;
+  if(c===cfgCat)b.classList.add('active');
+  b.onclick=()=>{cfgCat=c;document.querySelectorAll('#cfgTabs button').forEach(x=>x.classList.toggle('active',x===b));renderCfg()};
+  $('cfgTabs').appendChild(b);
+});
+function renderCfg(){
+  $('cfgBody').innerHTML=CFG[cfgCat].map(([k,v,d,type,opts])=>{
+    let ctl='';
+    if(type==='select')ctl=`<select style="width:210px;background:#0A1C1B;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;font-size:12.5px">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
+    else if(type==='toggle')ctl=`<button class="toggle ${v==='true'?'on':''}" onclick="this.classList.toggle('on')" aria-label="${d}"></button>`;
+    else ctl=`<input value="${v}" style="width:210px;background:#0A1C1B;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:var(--mono)">`;
+    return `<div class="kv-row"><div class="kv-info"><div class="k">${cfgCat}.${k}</div><div class="d">${d}</div></div>${ctl}</div>`;
+  }).join('');
+}
+renderCfg();
+
+/* ============== keys ============== */
+let keyCat='LLMプロバイダー';
+Object.keys(KEYS).forEach(c=>{
+  const b=document.createElement('button');b.textContent=c;
+  if(c===keyCat)b.classList.add('active');
+  b.onclick=()=>{keyCat=c;document.querySelectorAll('#keyTabs button').forEach(x=>x.classList.toggle('active',x===b));renderKeys()};
+  $('keyTabs').appendChild(b);
+});
+function renderKeys(){
+  $('keyBody').innerHTML=KEYS[keyCat].map(([k,set,d])=>
+   `<div class="kv-row">
+      <div class="kv-info"><div class="k">${k} ${set?'<span class="badge green">設定済み</span>':'<span class="badge dim">未設定</span>'}</div><div class="d">${d}</div></div>
+      <span class="kv-val">${set?'sk-…'+Math.random().toString(36).slice(2,6)+'••••••••':'—'}</span>
+      <button class="btn ghost sm" onclick="toast('${k} を更新しました — /reload で即時反映できます')">${set?'更新':'設定'}</button>
+      ${set?`<button class="btn danger sm" onclick="toast('${k} を削除しました')">削除</button>`:''}
+    </div>`).join('');
+}
+renderKeys();
+
+/* ============== skills page ============== */
+let skillCat='すべて';
+const cats=['すべて',...new Set(SKILLS.map(s=>s.cat))];
+cats.forEach(c=>{
+  const b=document.createElement('button');b.textContent=c;
+  if(c===skillCat)b.classList.add('active');
+  b.onclick=()=>{skillCat=c;document.querySelectorAll('#skillCats button').forEach(x=>x.classList.toggle('active',x===b));renderSkillsPage()};
+  $('skillCats').appendChild(b);
+});
+function renderSkillsPage(){
+  const q=($('skillSearch').value||'').toLowerCase();
+  const list=SKILLS.filter(s=>(skillCat==='すべて'||s.cat===skillCat)&&(s.name+s.desc+s.cat).toLowerCase().includes(q));
+  $('skillsList').innerHTML=list.length?list.map(s=>
+   `<div class="skill-card"><span class="si">${s.icon}</span>
+     <div style="flex:1;min-width:0"><div class="sn mono">${s.name}</div><div class="sd">${s.desc}</div><span class="badge teal">${s.cat}</span></div>
+     <button class="toggle ${s.on?'on':''}" aria-label="${s.name}を有効化" onclick="this.classList.toggle('on');toast('${s.name} を切り替えました — 次回セッションから反映')"></button>
+   </div>`).join(''):'<p class="empty">該当するスキルがありません。検索語を変えるか、Skill Hub から新しくインストールできます。</p>';
+}
+renderSkillsPage();
+
+/* ============== mcp page ============== */
+$('mcpList').innerHTML=MCPS.filter(m=>m.on||P.mcps.has(m.id)).map(m=>
+ `<div class="mcp-row">
+   <div class="mi">${m.icon}</div>
+   <div style="flex:1;min-width:0"><div class="mn">${m.name} <span class="badge green">接続OK</span></div><div class="mu">${m.url}</div></div>
+   <button class="btn ghost sm" onclick="toast('${m.name}: 接続テスト成功 — ${3+Math.floor(Math.random()*9)} ツールを検出')">テスト</button>
+   <button class="toggle on" aria-label="${m.name}を有効化" onclick="this.classList.toggle('on');toast('${m.name} の状態を変更しました — ゲートウェイ再起動後に反映')"></button>
+ </div>`).join('');
+$('mcpCatalog').innerHTML=MCPS.filter(m=>!m.on&&!P.mcps.has(m.id)).map(m=>
+ `<div class="skill-card"><span class="si">${m.icon}</span>
+   <div style="flex:1;min-width:0"><div class="sn">${m.name}</div><div class="sd">${m.desc}</div>${m.key?'<span class="badge amber">🔑 APIキー必要</span>':'<span class="badge dim">認証不要</span>'}</div>
+   <button class="btn sm" onclick="toast('${m.name} をインストールしました${m.key?' — APIキーを .env に保存':''}')">追加</button>
+ </div>`).join('');
+
+/* ============== channels ============== */
+$('chanList').innerHTML=CHANNELS.map(c=>{
+  const st=c.st==='connected'?'<span class="badge green">接続中</span>':c.st==='configured'?'<span class="badge amber">設定済み・未接続</span>':'<span class="badge dim">未設定</span>';
+  return `<div class="chan-row">
+   <div class="ci">${c.icon}</div>
+   <div style="flex:1;min-width:0"><div class="cn">${c.name} ${st}</div><div class="cd">${c.d}</div></div>
+   <button class="btn ghost sm" onclick="toast('${c.name} の設定フォームを開きます — シークレットはマスクされ、空欄は既存値を保持します')">設定</button>
+   <button class="btn ghost sm" onclick="toast('${c.name}: ${c.st==='connected'?'設定・有効・接続中 — すべて正常':'未接続 — ゲートウェイ再起動が必要です'}')">テスト</button>
+   <button class="toggle ${c.st!=='off'?'on':''}" aria-label="${c.name}を有効化" onclick="this.classList.toggle('on');toast('${c.name} を切り替えました — 認証情報はディスクに保持されます')"></button>
+  </div>`}).join('');
+function renderPairs(){
+  $('pairList').innerHTML=PAIRS.length?PAIRS.map((p,i)=>
+   `<div class="kv-row">
+     <div class="kv-info"><div class="k">${p.user} <span class="badge dim">${p.platform}</span><span class="badge amber">コード: ${p.code}</span></div><div class="d">${p.age}にリクエスト</div></div>
+     <button class="btn sm" onclick="PAIRS.splice(${i},1);renderPairs();toast('${p.user} を承認しました — 以降このユーザーのメッセージに応答します')">承認</button>
+     <button class="btn danger sm" onclick="PAIRS.splice(${i},1);renderPairs();toast('リクエストを拒否しました')">拒否</button>
+   </div>`).join('')
+   :'<div class="empty">保留中のペアリングリクエストはありません。承認済み: @yuki(Telegram)、Yuki#0042(Discord)</div>';
+}
+renderPairs();
+
+/* ============== security ============== */
+const APPROVALS=[['ask','実行前に毎回確認(推奨)',true],['yolo','確認なしで実行 — 隔離環境のみ',false],['deny','危険コマンドを常に拒否',false]];
+$('approvalPicks').innerHTML=APPROVALS.map(([id,d,sel])=>
+ `<button class="pick ${sel?'sel':''}" onclick="document.querySelectorAll('#approvalPicks .pick').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');toast('承認モードを「${id}」に変更しました')"><div class="pt mono">${id}</div><div class="pd">${d}</div></button>`).join('');
+const AUDITS=[
+ ['ok','ダッシュボードは 127.0.0.1 にバインド(外部非公開)'],
+ ['ok','.env のパーミッションは 600'],
+ ['ok','Botトークンのロック衝突なし(4プロファイル)'],
+ ['warn','--insecure フラグの使用履歴が gateway.log にあります(5/30)— 現在は無効'],
+ ['ok','シェルフックはすべて同意済み'],
+];
+function renderAudit(){
+  $('auditList').innerHTML=AUDITS.map(([st,t])=>
+   `<div class="check-item ${st==='ok'?'done':''}"><span class="cb" style="${st==='warn'?'border-color:var(--amber);color:var(--amber)':''}">${st==='ok'?'✓':'!'}</span><span style="flex:1;${st==='warn'?'color:var(--amber)':''}">${t}</span></div>`).join('');
+}
+renderAudit();
+function runAudit(){toast('セキュリティ監査を実行しました — 18項目チェック、警告1件(詳細はリストを確認)')}
+</script>
+</body>
+</html>
