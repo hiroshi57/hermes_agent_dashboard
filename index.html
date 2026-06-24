@@ -4149,7 +4149,7 @@ function setAnalyticsPeriod(period) {
 // 有効化: OM_LLMO.enabled=true にしてブランド名を設定する。
 // 前提: /api/openmythos プロキシ + Vercel env (OPENMYTHOS_BASE_URL / OPENMYTHOS_API_KEY)。
 // 連携が無効・未設定・失敗のいずれでも既存 Analytics 表示は壊れない (graceful degradation)。
-const OM_LLMO = { enabled: false, brand: '' };
+const OM_LLMO = { enabled: true, brand: 'hermes' };
 
 function omFmtRate(v) {
   return (typeof v === 'number') ? (v * 100).toFixed(1) + '%' : null;
