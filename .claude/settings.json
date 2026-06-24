@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "PowerShell(& { Set-Location \"C:\\\\Users\\\\takiz\\\\git_taki57\\\\hermes-kanban\"; $result = npx tsc --noEmit 2>&1; if \\($result\\) { $result | Select-Object -First 30 } else { \"型チェック: エラーなし\" } })"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\takiz\\git_taki57\\hermes-kanban\\src",
+      "C:\\Users\\takiz\\git_taki57\\di-kb"
+    ]
+  }
+}

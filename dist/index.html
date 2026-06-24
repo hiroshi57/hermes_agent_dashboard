@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Agent Dashboard</title>
+<!-- Favicon (SVG inline — no external file needed) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1E1D'/%3E%3Cline x1='16' y1='4' x2='16' y2='28' stroke='%232DD4BF' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M11 8 Q6 13 8 18 Q10 22 16 22 Q22 22 24 18 Q26 13 21 8' stroke='%232DD4BF' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M11 8 C13 11 19 11 21 8' stroke='%232DD4BF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='25' r='2' fill='%232DD4BF'/%3E%3Ccircle cx='22' cy='25' r='2' fill='%232DD4BF'/%3E%3C/svg%3E">
+<!-- OGP -->
+<meta property="og:title" content="Hermes Agent Dashboard">
+<meta property="og:description" content="Multi-agent runtime dashboard — 19-page UI template with Kanban, Analytics, Logs, Chat TUI, and 6 themes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hiroshi57.github.io/hermes_agent_dashboard/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hermes Agent Dashboard">
+<meta name="twitter:description" content="Multi-agent runtime dashboard — 19-page UI template.">
+<meta name="description" content="AI エージェントダッシュボード UIテンプレート。Kanban・Analytics・Logs・Chat TUI・6テーマ搭載。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- フォントを非ブロッキング読込（render-blocking 解消） -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+<link rel="preload" href="style.op4pbx.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="style.op4pbx.min.css"></noscript>
+<style>
+/* critical: initial render */
+:root{--bg:#0a0e13;--sidebar-bg:#080b10;--text:#c9d1d9;--cream:#e8e0d0;--teal:#4dd0c4;--border:#1e2530}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden}
+#app{display:flex;height:100vh}
+#sidebar{width:200px;background:var(--sidebar-bg);border-right:1px solid var(--border);flex-shrink:0}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:48px;background:var(--sidebar-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:20px}
+#topbar-title{font-size:15px;font-weight:600;color:var(--cream)}
+.page{display:none}.page.visible{display:block}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== SIDEBAR ===== -->
+<nav id="sidebar" role="navigation" aria-label="メインナビゲーション">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 20 20" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+        <line x1="10" y1="2" x2="10" y2="18"/>
+        <path d="M7 5 Q4 8 5 11 Q6 14 10 14 Q14 14 15 11 Q16 8 13 5"/>
+        <path d="M7 5 C8 7 12 7 13 5"/>
+        <circle cx="6" cy="16" r="1.5" fill="white" stroke="none"/>
+        <circle cx="14" cy="16" r="1.5" fill="white" stroke="none"/>
+        <path d="M6 14.5 Q7 18 10 17.5 Q13 18 14 14.5" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="brand-name" id="brand-name">Hermes</div>
+      <div class="brand-sub" id="brand-tagline">v2.4.1 · local</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <!-- 運用 -->
+    <div class="nav-group">
+      <div class="nav-group-label" data-i18n="nav.group.ops">運用</div>
+      <div class="nav-item active" data-page="status" role="button" tabindex="0" aria-label="ステータス">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="3" height="7" rx="1"/><rect x="6" y="5" width="3" height="10" rx="1"/><rect x="11" y="2" width="3" height="13" rx="1"/></svg>
+        <span class="nav-item-label" data-i18n="nav.status">ステータス</span>
+      </div>
+      <div class="nav-item" data-page="sessions" role="button" tabindex="0" aria-label="セッション">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3z"/><path d="M5 7h6M5 9.5h3"/></svg>
+        <span class="nav-item-label" data-i18n="nav.sessions">セッション</span>
+      </div>
+      <div class="nav-item" data-page="kanban" role="button" tabindex="0" aria-label="Kanban">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="4" height="12" rx="1"/><rect x="6" y="2" width="4" height="8" rx="1"/><rect x="11" y="2" width="4" height="10" rx="1"/></svg>
+        <span class="nav-item-label" data-i18n="nav.kanban">Kanban</span>
+      </div>
+      <div class="nav-item" data-page="cron" role="button" tabindex="0" aria-label="Cron">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
+        <span class="nav-item-label" data-i18n="nav.cron">Cron</span>
+      </div>
+      <div class="nav-item" data-page="analytics" role="button" tabindex="0" aria-label="Analytics">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12l4-5 3 3 3-6 4 4"/></svg>
+        <span class="nav-item-label" data-i18n="nav.analytics">Analytics</span>
+        <span class="nav-pill new" data-i18n="badge.new">NEW</span>
+      </div>
+      <div class="nav-item" data-page="logs" role="button" tabindex="0" aria-label="Logs">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
+        <span class="nav-item-label" data-i18n="nav.logs">Logs</span>
+        <span class="nav-pill new" data-i18n="badge.new">NEW</span>
+      </div>
+      <div class="nav-item" data-page="chat" role="button" tabindex="0" aria-label="Chat">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v9a1 1 0 01-1 1H6l-4 3V2z"/><path d="M5 6h6M5 9h4"/></svg>
+        <span class="nav-item-label" data-i18n="nav.chat">Chat</span>
+        <span class="nav-pill new" data-i18n="badge.new">NEW</span>
+      </div>
+    </div>
+
+    <!-- エージェント -->
+    <div class="nav-group">
+      <div class="nav-group-label" data-i18n="nav.group.agent">エージェント</div>
+      <div class="nav-item" data-page="profiles" role="button" tabindex="0" aria-label="プロファイル">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2.5-5 5-5s5 2 5 5"/><circle cx="12" cy="7" r="2"/><path d="M12 9c1.5 0 3 .8 3 3"/></svg>
+        <span class="nav-item-label" data-i18n="nav.profiles">プロファイル</span>
+      </div>
+      <div class="nav-item" data-page="builder" role="button" tabindex="0" aria-label="プロファイル作成">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v14M1 8h14"/><circle cx="8" cy="8" r="3"/></svg>
+        <span class="nav-item-label" data-i18n="nav.builder">プロファイル作成</span>
+        <span class="nav-pill new">NEW</span>
+      </div>
+      <div class="nav-item" data-page="soul" role="button" tabindex="0" aria-label="Personality / SOUL">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.5 2 3 4 3 7c0 2 1 3.5 2.5 4.5V14h5v-2.5C12 10.5 13 9 13 7c0-3-2.5-5-5-5z"/></svg>
+        <span class="nav-item-label">Personality / SOUL</span>
+      </div>
+      <div class="nav-item" data-page="memory" role="button" tabindex="0" aria-label="メモリ">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="8" rx="2"/><path d="M5 4V2M8 4V2M11 4V2M5 12v2M8 12v2M11 12v2"/></svg>
+        <span class="nav-item-label">メモリ</span>
+      </div>
+      <div class="nav-item" data-page="skills" role="button" tabindex="0" aria-label="Skills">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l10 0M3 8h7M3 13h5"/><circle cx="13" cy="13" r="2"/><path d="M13 11V9"/></svg>
+        <span class="nav-item-label">Skills</span>
+      </div>
+      <div class="nav-item" data-page="mcp" role="button" tabindex="0" aria-label="MCP接続">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="4" r="2"/><circle cx="13" cy="12" r="2"/><path d="M5 8h4M9 8l-1-3.5M9 8l-1 3.5"/></svg>
+        <span class="nav-item-label">MCP接続</span>
+      </div>
+    </div>
+
+    <!-- 管理 -->
+    <div class="nav-group">
+      <div class="nav-group-label" data-i18n="nav.group.admin">管理</div>
+      <div class="nav-item" data-page="settings" role="button" tabindex="0" aria-label="設定">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3"/></svg>
+        <span class="nav-item-label">設定</span>
+      </div>
+      <div class="nav-item" data-page="secrets" role="button" tabindex="0" aria-label="シークレット">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <span class="nav-item-label">シークレット</span>
+      </div>
+      <div class="nav-item" data-page="channels" role="button" tabindex="0" aria-label="チャンネル">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v7a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/><path d="M5 11l1 3M11 11l-1 3M4 14h8"/></svg>
+        <span class="nav-item-label">チャンネル</span>
+      </div>
+      <div class="nav-item" data-page="security" role="button" tabindex="0" aria-label="セキュリティ">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L2 4v4c0 4 3 6 6 7 3-1 6-3 6-7V4L8 1z"/></svg>
+        <span class="nav-item-label">セキュリティ</span>
+        <span class="nav-pill warn">!</span>
+      </div>
+      <div class="nav-item" data-page="checkpoints" role="button" tabindex="0" aria-label="チェックポイント">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 8 C1 4 4 1 8 1s7 3 7 7-3 7-7 7-7-3-7-7z"/><path d="M5 8l2 2 4-4"/></svg>
+        <span class="nav-item-label">チェックポイント</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="gw-status">
+      <div class="gw-dot"></div>
+      <div>
+        <div class="gw-label">Gateway 稼働中</div>
+        <div class="gw-sub">default · :11435</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="topbar-breadcrumb">
+      <span>Hermes</span>
+      <span class="sep">/</span>
+      <span class="topbar-title" id="topbar-title">ステータス</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-chip" id="topbar-model-chip">hermes-4-405b</span>
+      <!-- 言語切替 -->
+      <button class="theme-toggle-btn" id="lang-toggle-btn"
+        onclick="toggleLang()" aria-label="言語切替 / Switch language"
+        title="EN / JA" style="font-size:11px;font-family:var(--font-mono);font-weight:700;width:auto;padding:0 8px">JA</button>
+      <!-- テーマ切替 -->
+      <div class="theme-wrap">
+        <button class="theme-toggle-btn" id="theme-toggle-btn"
+          onclick="toggleThemePopup()" aria-label="テーマを変更" title="テーマを変更">🎨</button>
+        <div class="theme-popup" id="theme-popup">
+          <div class="theme-popup-title">テーマ</div>
+          <!-- JS で renderThemeSwatches() が描画 -->
+        </div>
+      </div>
+      <div class="profile-switcher-wrap">
+        <span class="profile-switcher-label">PROFILE</span>
+        <select class="profile-switcher-select" id="profile-switcher" aria-label="プロファイル切替">
+          <option value="default">🪽 default</option>
+          <option value="coder">⌨️ coder</option>
+          <option value="researcher">🔬 researcher</option>
+          <option value="backup-0601">📦 backup-0601</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ========== PAGE: STATUS ========== -->
+    <div class="page visible" id="page-status">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">アクティブセッション</div>
+          <div class="stat-value">3</div>
+          <div class="stat-sub">うち1件ライブ実行中</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">プロファイル</div>
+          <div class="stat-value">4 <span class="stat-unit">/ 2 GW稼働</span></div>
+          <div class="stat-sub">default · coder</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今月のトークン使用量</div>
+          <div class="stat-value">2.4<span class="stat-unit">M</span></div>
+          <div class="stat-sub">推定 ¥4,200 · キャッシュHIT 61%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Kanban 進行中</div>
+          <div class="stat-value">3 <span class="stat-unit">/ 8 タスク</span></div>
+          <div class="stat-sub">待機中 1件 · 完了 2件</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <!-- Recent Sessions -->
+        <div class="card">
+          <div class="card-header">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3z"/></svg>
+            <span class="card-title">最近のセッション</span>
+          </div>
+          <div id="recent-sessions-list"></div>
+        </div>
+
+        <!-- Token Chart -->
+        <div class="card">
+          <div class="card-header">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="3" height="7" rx="1"/><rect x="6" y="5" width="3" height="10" rx="1"/><rect x="11" y="2" width="3" height="13" rx="1"/></svg>
+            <span class="card-title">日次トークン使用量 (14日)</span>
+          </div>
+          <div class="bar-chart" id="token-chart"></div>
+          <div class="bar-labels"><span>6/1</span><span>6/7</span><span>6/11</span></div>
+          <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+            <div><div class="stat-label">キャッシュヒット</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--teal)">61%</div></div>
+            <div><div class="stat-label">平均コスト/日</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono)">¥140</div></div>
+            <div><div class="stat-label">最大セッション</div><div style="font-size:15px;font-weight:700;font-family:var(--font-mono)">128k tok</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v6l3 3"/><circle cx="8" cy="8" r="6"/></svg>
+            <span class="card-title">運用ショートカット</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('doctor')">🩺 doctor</button>
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('audit')">🔒 セキュリティ監査</button>
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('backup')">💾 バックアップ</button>
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('gateway-restart')">🔄 GW再起動</button>
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('skill-update')">⬆ スキル更新</button>
+            <button class="btn btn-ghost btn-sm" onclick="runQuickAction('prompt-size')">📐 プロンプトサイズ</button>
+          </div>
+        </div>
+
+        <!-- Setup Checklist -->
+        <div class="card">
+          <div class="card-header">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8l2 2 4-4"/><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
+            <span class="card-title">セットアップ</span>
+            <span class="badge badge-teal" style="margin-left:auto">5 / 7 完了</span>
+          </div>
+          <ul class="checklist" id="setup-checklist"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: SESSIONS ========== -->
+    <div class="page" id="page-sessions">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap">
+        <div class="section-title" style="margin-bottom:0">セッション</div>
+        <button class="btn btn-ghost btn-sm" onclick="pruneOldSessions()">🗑 古いセッションを整理</button>
+      </div>
+      <div class="search-bar-wrap" style="margin-bottom:16px;max-width:100%">
+        <div class="search-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg></div>
+        <input class="input search-input" id="session-search" placeholder="タイトル・会話内容で検索 (FTS5)..." oninput="filterSessions(this.value)">
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap" id="session-stats-row"></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th></th><th>タイトル</th><th>プロファイル</th><th>ソース</th><th>メッセージ</th><th>経過時間</th><th>操作</th>
+            </tr></thead>
+            <tbody id="sessions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: KANBAN ========== -->
+    <div class="page" id="page-kanban">
+      <div class="kanban-header">
+        <div class="section-title" style="margin-bottom:0">Kanban</div>
+        <span class="badge badge-green">自動オーケストレーション: ON</span>
+        <span class="badge badge-dim" id="kanban-delegate-chip">delegate_task: 0/3 実行中</span>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openAddTaskModal()">+ タスクを追加</button>
+      </div>
+      <div class="kanban-board" id="kanban-board">
+        <!-- Columns rendered by JS -->
+      </div>
+    </div>
+
+    <!-- ========== PAGE: CRON ========== -->
+    <div class="page" id="page-cron">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="section-title" style="margin-bottom:0">Cron ジョブ</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-cron')">+ 新しいジョブ</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>名前</th><th>状態</th><th>プロファイル</th><th>配信先</th><th>cron式</th><th>次回実行</th><th>操作</th>
+            </tr></thead>
+            <tbody id="cron-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: CHAT ========== -->
+    <div class="page" id="page-chat">
+      <div class="section-title" style="margin-bottom:12px">Chat</div>
+      <div class="chat-wrap">
+        <div class="chat-toolbar">
+          <div class="chat-profile-badge">
+            <span id="chat-profile-icon">🪽</span>
+            <span id="chat-profile-name">default</span>
+            <span style="color:var(--cream-dim);margin:0 4px">·</span>
+            <span id="chat-model-label" style="color:var(--cream-dim);font-size:10px">hermes-4-405b</span>
+          </div>
+          <select class="input" id="chat-profile-select" style="font-family:var(--font-mono);font-size:11px;padding:5px 8px" onchange="chatSwitchProfile(this.value)">
+            <option value="default">🪽 default</option>
+            <option value="coder">⌨️ coder</option>
+            <option value="researcher">🔬 researcher</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="chatClear()" style="margin-left:auto">🗑 クリア</button>
+          <button class="btn btn-ghost btn-sm" onclick="chatExport()">⬇ エクスポート</button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+          <span class="chat-prompt-label" id="chat-prompt-label">default ❯</span>
+          <input class="chat-input" id="chat-input" type="text"
+            placeholder="メッセージを入力… (Enter で送信)"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}">
+          <button class="chat-send-btn" id="chat-send-btn" onclick="chatSend()">送信 ↵</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: ANALYTICS ========== -->
+    <div class="page" id="page-analytics">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">Analytics</div>
+        <div class="period-tabs" id="analytics-period-tabs">
+          <button class="period-tab active" data-period="7d" onclick="setAnalyticsPeriod('7d')">7日</button>
+          <button class="period-tab" data-period="30d" onclick="setAnalyticsPeriod('30d')">30日</button>
+          <button class="period-tab" data-period="90d" onclick="setAnalyticsPeriod('90d')">90日</button>
+        </div>
+      </div>
+      <div id="analytics-content"></div>
+    </div>
+
+    <!-- ========== PAGE: LOGS ========== -->
+    <div class="page" id="page-logs">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">Logs Viewer</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="input" id="log-search" style="width:200px;padding:5px 10px"
+            placeholder="🔍 検索…" oninput="filterLogs()">
+          <button class="btn btn-ghost btn-sm" id="tail-toggle-btn" onclick="toggleLogTail()">⏸ Tail停止</button>
+        </div>
+      </div>
+      <div class="logs-toolbar">
+        <div class="log-file-tabs" id="log-file-tabs"></div>
+        <div class="log-level-filters" id="log-level-filters"></div>
+      </div>
+      <div class="logs-viewer-wrap">
+        <div class="logs-viewer-body" id="logs-viewer-body"></div>
+        <div class="logs-tail-bar">
+          <div class="tail-indicator">
+            <span id="tail-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.8s infinite"></span>
+            <span id="tail-status">ライブテイル実行中</span>
+            <span style="color:var(--cream-dim)" id="log-count-label">— 0 件</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="clearLogsViewer()">🗑 クリア</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadLogs()">⬇ ダウンロード</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: PROFILES ========== -->
+    <div class="page" id="page-profiles">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">プロファイル</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-install-profile')">⬇ 配布物をインストール(git)</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-profile')">+ 新しいプロファイル</button>
+        </div>
+      </div>
+      <div class="profile-grid" id="profile-grid"></div>
+      <div style="margin-top:24px" class="card">
+        <div class="card-header"><span class="card-title">CLI ヒント</span></div>
+        <div class="code-block">
+<span class="hl-dim"># 新しいプロファイルを作成してエイリアス登録</span>
+<span class="hl-amber">hermes profile create</span> coder <span class="hl-teal">--description</span> "PRレビュー・CI修復専任エージェント"
+<span class="hl-dim"># → ~/.local/bin/coder にエイリアスが生成されます</span>
+<span class="hl-dim"># → coder chat / coder gateway start / coder doctor で直接操作可</span>
+
+<span class="hl-amber">hermes profile create</span> work <span class="hl-teal">--clone</span>         <span class="hl-dim"># 設定・認証情報・SOULのみ複製</span>
+<span class="hl-amber">hermes profile create</span> backup <span class="hl-teal">--clone-all</span>   <span class="hl-dim"># メモリ・セッション含む完全スナップショット</span>
+<span class="hl-amber">hermes profile create</span> work <span class="hl-teal">--clone-from</span> coder <span class="hl-dim"># 特定プロファイルからクローン</span>
+
+<span class="hl-dim"># トークンロック: 同じBotトークンを複数プロファイルで共有しようとすると衝突検知</span>
+<span class="hl-dim"># hermes profile use &lt;name&gt; でスティッキーデフォルトを切り替え</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: BUILDER ========== -->
+    <div class="page" id="page-builder">
+      <div class="section-title">Profile Builder</div>
+      <div class="builder-wrap">
+        <div>
+          <!-- Step Bar -->
+          <div class="builder-steps">
+            <div class="builder-step active" data-step="1" onclick="goToStep(1)">
+              <div class="step-num">1</div>
+              <span>目的・タイプ</span>
+            </div>
+            <div class="step-sep"></div>
+            <div class="builder-step" data-step="2" onclick="goToStep(2)">
+              <div class="step-num">2</div>
+              <span>Identity / Model</span>
+            </div>
+            <div class="step-sep"></div>
+            <div class="builder-step" data-step="3" onclick="goToStep(3)">
+              <div class="step-num">3</div>
+              <span>Skills + MCP</span>
+            </div>
+            <div class="step-sep"></div>
+            <div class="builder-step" data-step="4" onclick="goToStep(4)">
+              <div class="step-num">4</div>
+              <span>Review</span>
+            </div>
+          </div>
+
+          <!-- Step 1: 目的・エージェントタイプ -->
+          <div class="step-content active" data-step-content="1">
+            <div class="form-group">
+              <label class="form-label">案件・課題・解決したい目的</label>
+              <textarea class="input" id="builder-goal" rows="4"
+                placeholder="例: 競合3社の価格を週次でモニタリングして Slack に報告したい"
+                oninput="builderUpdate('goal',this.value)"></textarea>
+              <div class="form-hint">この内容をもとにエージェントの役割・Skills・MCP を推薦します</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">エージェントタイプ</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px">
+                <div class="agent-type-card" id="atype-single" onclick="selectAgentType('single')"
+                  style="border:2px solid var(--teal);background:var(--teal-glow)">
+                  <div style="font-size:24px;margin-bottom:6px">🤖</div>
+                  <div style="font-weight:700;font-size:13px;color:var(--teal)">シングルエージェント</div>
+                  <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;line-height:1.5">
+                    1つのプロファイルが直列で実行。<br>
+                    シンプルな定型タスク・Q&amp;A・ドキュメント作成に最適。
+                  </div>
+                </div>
+                <div class="agent-type-card" id="atype-multi" onclick="selectAgentType('multi')"
+                  style="border:1px solid var(--line2)">
+                  <div style="font-size:24px;margin-bottom:6px">🧩</div>
+                  <div style="font-weight:700;font-size:13px;color:var(--cream)">マルチエージェント</div>
+                  <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;line-height:1.5">
+                    <code>delegate_task</code> で最大3サブエージェントを並列実行。<br>
+                    複合リサーチ・Kanbanオーケストレーション向け。
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="multi-agent-notice" style="display:none">
+              <div class="alert alert-teal" style="margin-top:0">
+                <span class="alert-icon">🧩</span>
+                <div class="alert-body">
+                  <div class="alert-title">マルチエージェント設定</div>
+                  <div class="alert-text">
+                    <code>delegation.max_concurrent: 3</code> を設定し、<strong>kanban-orchestrator</strong> + <strong>kanban-worker</strong> スキルが自動で選択されます。サブエージェントのモデルは設定ページの <code>delegation.model</code> で変更できます。
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+              <button class="btn btn-ghost" onclick="generateRecommendations()" style="display:flex;align-items:center;gap:6px">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4"/><circle cx="8" cy="8" r="3"/></svg>
+                AIが推薦する
+              </button>
+              <button class="btn btn-primary" onclick="goToStep(2)">次へ: Identity / Model →</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Identity / Model -->
+          <div class="step-content" data-step-content="2">
+            <div class="form-group">
+              <label class="form-label">プロファイル名</label>
+              <input class="input" id="builder-name" placeholder="my-agent" oninput="builderUpdate('name',this.value)">
+              <div class="form-hint">コマンドエイリアスにもなります: <code>my-agent chat</code></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">役割・性格 (SOUL.md)</label>
+              <textarea class="input" id="builder-role" rows="5" placeholder="あなたは〜" oninput="builderUpdate('role',this.value)"></textarea>
+              <div class="form-hint">この内容が <code>~/.hermes/profiles/&lt;名前&gt;/SOUL.md</code> に書き込まれます</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kanban 振り分け用の説明</label>
+              <input class="input" id="builder-desc" placeholder="PRレビュー・CI修復・TypeScriptコード作成" oninput="builderUpdate('desc',this.value)">
+              <div class="form-hint">Kanbanオーケストレーターがこの説明を読んでタスクを割り振ります</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">使用モデル</label>
+              <div class="model-grid" id="builder-model-grid"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:16px">
+              <button class="btn btn-ghost" onclick="goToStep(1)">← 戻る</button>
+              <button class="btn btn-primary" onclick="goToStep(3)">次へ: Skills + MCP →</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Skills + MCP -->
+          <div class="step-content" data-step-content="3">
+            <div class="form-group">
+              <label class="form-label">Skills</label>
+              <div class="skill-select-grid" id="builder-skills-grid"></div>
+            </div>
+            <div class="form-group" style="margin-top:16px">
+              <label class="form-label">MCP サーバー</label>
+              <div class="skill-select-grid" id="builder-mcp-grid"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:16px">
+              <button class="btn btn-ghost" onclick="goToStep(2)">← 戻る</button>
+              <button class="btn btn-primary" onclick="goToStep(4)">次へ: Review →</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Review -->
+          <div class="step-content" data-step-content="4">
+            <div class="review-grid" id="builder-review-grid"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+              <div class="alert alert-amber">
+                <span class="alert-icon">⚠</span>
+                <div class="alert-body">
+                  <div class="alert-title">承認モード: ask</div>
+                  <div class="alert-text">危険なコマンドは実行前に毎回確認。プロファイルはサンドボックスではないため <code>terminal.cwd</code> を絶対パスで指定してください。</div>
+                </div>
+              </div>
+              <div class="alert alert-green">
+                <span class="alert-icon">✓</span>
+                <div class="alert-body">
+                  <div class="alert-title">保存時の動作</div>
+                  <div class="alert-text">保存すると <code id="builder-path-preview">~/.hermes/profiles/&lt;名前&gt;/</code> に独立プロファイルが作成されエイリアス登録されます。</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <button class="btn btn-ghost" onclick="goToStep(3)">← 戻る</button>
+              <button class="btn btn-primary" onclick="createProfile()">✓ プロファイルを作成</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- YAML Preview -->
+        <div class="yaml-preview-wrap">
+          <div class="yaml-preview-header">
+            <div class="yaml-dots">
+              <div class="yaml-dot yaml-dot-r"></div>
+              <div class="yaml-dot yaml-dot-y"></div>
+              <div class="yaml-dot yaml-dot-g"></div>
+            </div>
+            <span class="yaml-path" id="yaml-path-label">~/.hermes/profiles/&lt;名前&gt;/config.yaml</span>
+          </div>
+          <div class="yaml-body" id="yaml-preview">
+            <span class="yaml-comment"># フォームを入力すると即座に反映されます</span>
+          </div>
+          <div class="yaml-footer">入力に合わせてリアルタイム反映 — YAMLを手で書く必要はありません</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: SOUL ========== -->
+    <div class="page" id="page-soul">
+      <div class="section-title">Personality / SOUL</div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">SOUL.md エディタ</span>
+              <span class="badge badge-violet" style="margin-left:auto" id="soul-profile-badge">default</span>
+            </div>
+            <textarea class="input" id="soul-editor" style="min-height:300px;font-family:var(--font-mono);font-size:12px" placeholder="# ロール&#10;あなたはHermesエージェントです..."></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px">
+              <button class="btn btn-primary" onclick="saveSoul()">✓ 保存</button>
+            </div>
+          </div>
+          <div class="alert alert-amber">
+            <span class="alert-icon">ℹ</span>
+            <div class="alert-body">
+              <div class="alert-title">読み込み順序</div>
+              <div class="alert-text"><code>SOUL.md</code> はシステムプロンプトの<strong>先頭</strong>に配置されます。<br>その後に <code>.hermes.md</code> → <code>AGENTS.md</code> → <code>CLAUDE.md</code> の順で追記されます。変更は<strong>次回のセッション開始時から有効</strong>です。</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">プリセット</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px" id="soul-presets"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: MEMORY ========== -->
+    <div class="page" id="page-memory">
+      <div class="section-title">メモリ</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">MEMORY.md</span>
+            <span class="badge badge-dim" style="margin-left:auto">12.4 KB</span>
+          </div>
+          <pre style="font-size:11px;color:var(--cream-dim);font-family:var(--font-mono);background:rgba(0,0,0,.2);padding:10px;border-radius:6px;overflow:auto;max-height:180px;white-space:pre-wrap">## 学習した情報
+- ユーザーはTypeScriptを好む
+- テストはVitest + Testing Libraryで統一
+- PRは必ずCI通過後にマージ
+- Notionのページ構造: /projects/&lt;name&gt;/
+- 毎週月曜の朝にWeekly Reviewを実施
+- 競合調査はfirecrawlを優先</pre>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <button class="btn btn-danger btn-sm" onclick="resetMemory('MEMORY')">⚠ リセット</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">USER.md</span>
+            <span class="badge badge-dim" style="margin-left:auto">3.2 KB</span>
+          </div>
+          <pre style="font-size:11px;color:var(--cream-dim);font-family:var(--font-mono);background:rgba(0,0,0,.2);padding:10px;border-radius:6px;overflow:auto;max-height:180px;white-space:pre-wrap">## ユーザーの記憶
+- 名前: Hiroshi
+- 職種: プロダクトエンジニア
+- タイムゾーン: Asia/Tokyo
+- 好みの言語: 日本語
+- コードレビューは厳しめが好み
+- 朝9時以降に通知が欲しい</pre>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <button class="btn btn-danger btn-sm" onclick="resetMemory('USER')">⚠ リセット</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-title" style="font-size:14px">外部メモリプロバイダー</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="memory-provider-grid"></div>
+      <div class="alert alert-amber">
+        <span class="alert-icon">ℹ</span>
+        <div class="alert-body">
+          <div class="alert-text"><strong>Honcho 有効時:</strong> <code>--clone</code> でプロファイルを複製すると、共有ワークスペース + プロファイル専用 AI ピアが作成されます。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: SKILLS ========== -->
+    <div class="page" id="page-skills">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">Skills <span class="badge badge-dim" id="skills-count-badge" style="font-size:11px;margin-left:8px"></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="updateAllSkills()">⬆ すべて更新</button>
+      </div>
+      <!-- Search bar -->
+      <div class="search-bar-wrap" style="margin-bottom:14px">
+        <div class="search-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg></div>
+        <input class="input search-input" id="skill-search" placeholder="スキルを検索..." oninput="filterSkills(this.value)">
+      </div>
+      <!-- Sidebar + Grid layout -->
+      <div class="skills-layout">
+        <aside class="skills-sidebar" id="skills-sidebar"></aside>
+        <div class="skills-main">
+          <div id="skills-grid"></div>
+        </div>
+      </div>
+      <!-- Skill Curator -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-header">
+          <span style="font-size:16px">🤖</span>
+          <span class="card-title">Skill Curator</span>
+          <span class="badge badge-green" style="margin-left:8px"><span class="gw-dot" style="display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.8s infinite;margin-right:4px"></span>稼働中</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="runCurator()">今すぐ実行</button>
+            <button class="btn btn-ghost btn-sm" onclick="pauseCurator()">一時停止</button>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--cream-dim)">24時間ごとに自動更新 · 最終実行: <strong style="color:var(--cream)">6時間前</strong></div>
+        <div style="font-size:12px;color:var(--cream-dim);margin-top:4px">前回の結果: <span style="color:var(--green)">2件更新</span> · <span style="color:var(--amber)">未使用スキル1件を提案</span></div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: MCP ========== -->
+    <div class="page" id="page-mcp">
+      <div class="section-title">MCP 接続</div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><span class="card-title">接続済みサーバー</span></div>
+        <div id="mcp-connected-list"></div>
+      </div>
+      <div class="section-title" style="font-size:14px">カタログから追加 <span class="badge badge-dim">Nous承認済み optional-mcps/</span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="mcp-catalog-grid"></div>
+    </div>
+
+    <!-- ========== PAGE: SETTINGS ========== -->
+    <div class="page" id="page-settings">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="section-title" style="margin-bottom:0">設定</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="resetSettings()">デフォルトに戻す</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportSettings()">エクスポート(JSON)</button>
+          <button class="btn btn-primary btn-sm" onclick="saveSettings()">✓ 保存</button>
+        </div>
+      </div>
+      <div class="tabs" id="settings-tabs"></div>
+      <div id="settings-content"></div>
+    </div>
+
+    <!-- ========== PAGE: SECRETS ========== -->
+    <div class="page" id="page-secrets">
+      <div class="section-title">シークレット</div>
+      <div class="tabs" id="secrets-tabs"></div>
+      <div id="secrets-content"></div>
+      <!-- Bitwarden -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-header">
+          <span style="font-size:16px">🔐</span>
+          <span class="card-title">Bitwarden / Vaultwarden 連携</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="syncBitwarden()">🔄 同期</button>
+        </div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:10px"><code class="hl-amber" style="color:var(--amber)">{{bw:item/field}}</code> 構文で <code>.env</code> から参照できます。値は起動時に解決され<strong style="color:var(--cream)">ディスクに残りません</strong>。</div>
+        <div class="code-block" style="font-size:11px">OPENAI_API_KEY=<span class="hl-amber">{{bw:OpenAI/api-key}}</span><br>TELEGRAM_TOKEN=<span class="hl-amber">{{bw:Telegram Bot/token}}</span></div>
+      </div>
+      <div class="alert alert-amber" style="margin-top:14px">
+        <span class="alert-icon">ℹ</span>
+        <div class="alert-body"><div class="alert-text">変更後は <code>/reload</code> で再起動なしに反映されます (アクティブセッションはそのまま継続)。</div></div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: CHANNELS ========== -->
+    <div class="page" id="page-channels">
+      <div class="section-title">チャンネル</div>
+      <div class="card" style="margin-bottom:20px">
+        <div id="channels-list"></div>
+      </div>
+      <div class="section-title" style="font-size:14px">ペアリング承認</div>
+      <div class="card" id="pairing-card">
+        <div style="text-align:center;padding:20px;color:var(--cream-dim);font-size:13px">保留中のリクエストはありません</div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: SECURITY ========== -->
+    <div class="page" id="page-security">
+      <div class="section-title">セキュリティ</div>
+      <div style="margin-bottom:20px">
+        <div class="section-title" style="font-size:13px;color:var(--cream-dim);font-weight:500;margin-bottom:10px">承認モード</div>
+        <div class="approval-cards" id="approval-mode-cards"></div>
+      </div>
+      <div class="alert alert-rose" style="margin-bottom:16px">
+        <span class="alert-icon">⚠</span>
+        <div class="alert-body">
+          <div class="alert-title">プロファイルはサンドボックスではありません</div>
+          <div class="alert-text">local バックエンドはユーザー権限と同じ。本番環境での自動実行には Docker バックエンドへの切替を推奨します。</div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="showToast('terminal.backend を docker に変更しました — 次回セッションから有効','success')">Docker に切り替え</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span class="card-title">セキュリティチェックリスト</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="runSecurityAudit()">監査を実行</button>
+        </div>
+        <ul class="checklist" id="security-checklist"></ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">シェルフック</span></div>
+        <div class="alert alert-amber" style="margin-bottom:12px">
+          <span class="alert-icon">⚠</span>
+          <div class="alert-body"><div class="alert-text">シェルフックは任意のコマンドを実行できます。必ず同意ゲートを通過した後にのみ有効化してください。</div></div>
+        </div>
+        <div id="shell-hooks-list"></div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: CHECKPOINTS ========== -->
+    <div class="page" id="page-checkpoints">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="section-title" style="margin-bottom:0">チェックポイント</div>
+        <button class="btn btn-ghost btn-sm" onclick="pruneCheckpoints()">🗑 古いものを整理</button>
+      </div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">チェックポイント数</div>
+          <div class="stat-value">24</div>
+          <div class="stat-sub">直近7日間</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">シャドウストア</div>
+          <div class="stat-value">184<span class="stat-unit"> MB</span></div>
+          <div class="stat-sub">~/.hermes/checkpoints/</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">自動スナップショット</div>
+          <div class="stat-value" style="font-size:16px;padding-top:4px">変更前に<br>自動保存</div>
+          <div class="stat-sub"><code>/rollback</code> で即座に復元</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>⎌</th><th>ファイル</th><th>セッション</th><th>経過時間</th><th>サイズ</th><th>操作</th>
+            </tr></thead>
+            <tbody id="checkpoints-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+<div class="modal-overlay" id="modal-overlay-global" onclick="handleOverlayClick(event)">
+  <!-- New Profile -->
+  <div class="modal" id="modal-new-profile" onclick="event.stopPropagation()">
+    <div class="modal-title">新しいプロファイル</div>
+    <div class="form-group">
+      <label class="form-label">プロファイル名</label>
+      <input class="input" id="np-name" placeholder="my-agent">
+    </div>
+    <div class="form-group">
+      <label class="form-label">説明</label>
+      <input class="input" id="np-desc" placeholder="Kanban振り分け用の説明">
+    </div>
+    <div class="form-group">
+      <label class="form-label">作成方法</label>
+      <select class="input" id="np-method">
+        <option value="blank">空のプロファイルを作成</option>
+        <option value="clone">--clone: 設定とSOULのみ複製</option>
+        <option value="clone-all">--clone-all: 完全スナップショット</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-profile')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitNewProfile()">作成</button>
+    </div>
+  </div>
+
+  <!-- Install Profile -->
+  <div class="modal" id="modal-install-profile" onclick="event.stopPropagation()" style="display:none">
+    <div class="modal-title">⬇ 配布物をインストール (git)</div>
+    <div class="form-group">
+      <label class="form-label">リポジトリ URL</label>
+      <input class="input" id="install-url" placeholder="https://github.com/user/hermes-profile-coder">
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="form-label">--alias を生成</div>
+        <div class="form-hint">コマンドエイリアスを <code>~/.local/bin/</code> に作成</div>
+      </div>
+      <label class="toggle" aria-label="aliasを生成">
+        <input type="checkbox" id="install-alias" checked>
+        <div class="toggle-track"></div>
+      </label>
+    </div>
+    <div class="alert alert-amber" style="margin:12px 0">
+      <span class="alert-icon">ℹ</span>
+      <div class="alert-body">
+        <div class="alert-text">配布物には <strong>SOUL・設定・スキル・cron・MCP</strong> が含まれます。<strong>認証情報・メモリ・セッション</strong>はマシン専用のためインストールされません。</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-install-profile')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitInstallProfile()">インストール</button>
+    </div>
+  </div>
+
+  <!-- New Cron -->
+  <div class="modal modal-lg" id="modal-new-cron" onclick="event.stopPropagation()" style="display:none">
+    <div class="modal-title">新しい Cron ジョブ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">名前</label>
+        <input class="input" id="cron-name" placeholder="週次レポート">
+      </div>
+      <div class="form-group">
+        <label class="form-label">実行プロファイル</label>
+        <select class="input" id="cron-profile">
+          <option>default</option><option>coder</option><option>researcher</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">プロンプト</label>
+      <textarea class="input" id="cron-prompt" rows="3" placeholder="今週のGitHub PRをまとめてSlackに送信してください"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">cron 式</label>
+        <input class="input" id="cron-expr" placeholder="0 9 * * MON" style="font-family:var(--font-mono)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">配信先</label>
+        <select class="input" id="cron-dest">
+          <option>local</option><option>Telegram</option><option>Slack</option><option>Discord</option><option>email</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-cron')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitNewCron()">作成</button>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Profile -->
+  <div class="modal" id="modal-confirm-delete" onclick="event.stopPropagation()" style="display:none">
+    <div class="modal-title" style="color:var(--rose)">プロファイルを削除</div>
+    <div class="alert alert-rose" style="margin-bottom:14px">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-body"><div class="alert-text">この操作は取り消せません。メモリ・セッション・設定がすべて削除されます。</div></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">確認: プロファイル名を入力</label>
+      <input class="input" id="delete-confirm-input" placeholder="" oninput="checkDeleteConfirm()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm-delete')">キャンセル</button>
+      <button class="btn btn-danger" id="delete-confirm-btn" disabled onclick="executeDeleteProfile()">削除</button>
+    </div>
+  </div>
+
+  <!-- Add Task -->
+  <div class="modal" id="modal-add-task" onclick="event.stopPropagation()" style="display:none">
+    <div class="modal-title">タスクを追加</div>
+    <div class="form-group">
+      <label class="form-label">タスク内容</label>
+      <textarea class="input" id="task-content" rows="3" placeholder="競合3社の料金ページをスクレイピングして比較表を作成"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">優先度</label>
+      <select class="input" id="task-priority">
+        <option value="high">高</option><option value="mid" selected>中</option><option value="low">低</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-task')">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitAddTask()">追加 (自動振り分け)</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG DRAWER (監視パネル) -->
+<div id="log-drawer" role="dialog" aria-modal="true" aria-label="サブエージェント監視パネル">
+  <div class="drawer-header">
+    <div class="drawer-header-info">
+      <div class="drawer-title" id="drawer-task-title">タスク名</div>
+      <div class="drawer-badges" id="drawer-badges"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()" aria-label="閉じる">✕</button>
+  </div>
+  <!-- タブバー -->
+  <div class="monitor-tabs">
+    <button class="monitor-tab active" data-tab="log" onclick="switchDrawerTab('log')">📋 ログ</button>
+    <button class="monitor-tab" data-tab="detail" onclick="switchDrawerTab('detail')">📊 詳細</button>
+    <button class="monitor-tab" data-tab="inject" onclick="switchDrawerTab('inject')">⚡ 指示を注入</button>
+  </div>
+  <!-- パネル: ログ -->
+  <div class="monitor-panel active drawer-body" id="drawer-panel-log" style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;line-height:1.8"></div>
+  <!-- パネル: 詳細 -->
+  <div class="monitor-panel" id="drawer-panel-detail">
+    <div class="monitor-stat-grid" id="drawer-detail-grid"></div>
+    <div class="monitor-ctrl-section">
+      <div class="form-label" style="margin-bottom:6px">優先度を変更</div>
+      <div style="display:flex;gap:6px">
+        <button class="kanban-action-btn" style="flex:none;padding:6px 14px;font-size:11px" onclick="changePriority('high')">🔴 高</button>
+        <button class="kanban-action-btn" style="flex:none;padding:6px 14px;font-size:11px" onclick="changePriority('mid')">🟡 中</button>
+        <button class="kanban-action-btn" style="flex:none;padding:6px 14px;font-size:11px" onclick="changePriority('low')">⚪ 低</button>
+      </div>
+    </div>
+    <div class="monitor-ctrl-section">
+      <div class="form-label" style="margin-bottom:6px">プロファイルを再割り当て</div>
+      <select class="input" id="drawer-profile-select" onchange="reassignProfile(this.value)" style="width:100%">
+        <option value="default">default</option>
+        <option value="coder">coder</option>
+        <option value="researcher">researcher</option>
+        <option value="backup-0601">backup-0601</option>
+      </select>
+    </div>
+  </div>
+  <!-- パネル: 指示注入 -->
+  <div class="monitor-panel" id="drawer-panel-inject">
+    <div class="inject-panel">
+      <div>
+        <div class="form-label" style="margin-bottom:5px">注入履歴</div>
+        <div class="inject-history" id="inject-history">
+          <span class="inject-history-empty">（まだ指示は注入されていません）</span>
+        </div>
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:5px">エージェントへの指示</div>
+        <textarea class="input" id="inject-text" rows="3"
+          placeholder="例: 競合C社を優先的に調査して。次のiterationでこの指示を反映してください。"></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="injectInstruction()" style="align-self:flex-start">
+        ⚡ 次のiterationに注入
+      </button>
+    </div>
+  </div>
+  <!-- フッター -->
+  <div class="drawer-footer">
+    <div class="drawer-iter" id="drawer-iter-display">iteration 0 / 40</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" id="drawer-restart-btn" onclick="restartFromDrawer()">🔄 再起動</button>
+      <button class="btn btn-ghost btn-sm" id="drawer-stop-btn" onclick="stopSubAgent()">⏸ 停止</button>
+      <button class="btn btn-primary btn-sm" onclick="completeFromDrawer()">✓ 完了にする</button>
+    </div>
+  </div>
+</div>
+<div id="drawer-overlay"></div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+<script defer src="app.8h5qz.min.js"></script>
+</body>
+</html>

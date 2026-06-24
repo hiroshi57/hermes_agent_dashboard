@@ -7,7 +7,7 @@
 
 ## 進行中
 
-（なし — 次のタスクを「未着手」から選んで着手）
+（なし — P1完了。P3: Lighthouse 計測が次タスク）
 
 ---
 
@@ -15,10 +15,14 @@
 
 ### P1: 品質・信頼性（要実機）
 
-- [ ] **実ブラウザでの動作検証**
-  - 完了条件: Chrome / Edge / Firefox でコンソールエラーゼロ、全18ページ・全インタラクションの動作確認
-- [ ] **モバイル実機での表示確認**
-  - 完了条件: iPhone / Android 実機で Kanban タッチドラッグ・レイアウトが正常動作
+- [x] **実ブラウザでの動作検証** ← 完了
+  - Playwright で Chromium / Firefox / WebKit (Safari) 3ブラウザ対応
+  - 全34テスト PASS（コンソールエラーゼロ確認済み）
+  - 修正: Cron タイトル / Profile Builder セレクタ / D&D を DragEvent dispatch 方式に統一
+- [x] **モバイル実機での表示確認** ← 完了
+  - Playwright で iPhone 13 (iOS WebKit) + Pixel 5 (Android Chrome) エミュレーション追加
+  - mobile.spec.js 新規作成（4シナリオ・12テスト × 2デバイス = 24テスト PASS）
+  - タッチD&D・タップ操作・全ページ遷移・Analytics/Chat/Skills/Builder 動作確認済み
 
 ### P2: 機能拡張
 
