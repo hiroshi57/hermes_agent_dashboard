@@ -7,30 +7,33 @@
 
 ## 進行中
 
-（なし — 次のタスクを「未着手」から選んで着手）
+（なし）
 
 ---
 
 ## 未着手
 
-### P1: 品質・信頼性（要実機）
+### P1: セキュリティ・信頼性
 
-- [ ] **実ブラウザでの動作検証**
-  - 完了条件: Chrome / Edge / Firefox でコンソールエラーゼロ、全18ページ・全インタラクションの動作確認
-- [ ] **モバイル実機での表示確認**
-  - 完了条件: iPhone / Android 実機で Kanban タッチドラッグ・レイアウトが正常動作
+- [ ] **Vercel env の本番設定確認**（`OPENMYTHOS_BASE_URL` / `OPENMYTHOS_API_KEY`）
+  - 未設定のままだと OpenMythos 連携が 500 を返す
+  - Vercel Project Settings → Environment Variables で設定する
 
 ### P2: 機能拡張
 
-- [x] **チャット（TUI埋め込み）ページの追加** ← 完了
-- [x] **E2E スモークテストの追加** ← 完了
+- [ ] **PR #2 マージ → main へのリリース**
+  - `feature/v2-full-rewrite` を main へマージ
+  - 本番 URL https://hermesagentdashboard.vercel.app に反映
+- [ ] **パフォーマンス計測**（Lighthouse 90点以上を維持）
+  - 現状スコア未計測（build後の dist を対象に計測する）
+- [ ] **OpenMythos デモページのリンクを index.html に追加**
+  - `/openmythos-demo.html` は公開済みだがナビから辿れない
 
 ### P3: 磨き込み
 
-- [x] **キーボードナビゲーション強化** ← 完了
-- [x] **OGP・favicon の追加** ← 完了
-- [x] **i18n 対応** ← 完了
-- [ ] **パフォーマンス計測**（Lighthouse 90点以上を維持）
+- [ ] **README.md に PR #2 / OpenMythos 連携の説明を追記**
+- [ ] **lh-v3.json / lighthouse-report*.json をリポジトリから削除**
+  - 成果物ファイルが root に散らばっている → docs/ 以下に整理するか .gitignore に追加
 
 ---
 

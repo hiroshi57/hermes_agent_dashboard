@@ -1,0 +1,44 @@
+{
+  "changes_this_session": [],
+  "cwd": "C:\\Users\\hiroshi_takizawa\\hermes_agent_dashboard",
+  "duration_minutes": 0,
+  "ended_at": "2026-06-12T00:28:38Z",
+  "event_seq": 7,
+  "fork_count": 0,
+  "git": {
+    "branch": "(no git)",
+    "last_commit": "none",
+    "uncommitted_changes": 0
+  },
+  "harness_mem": {
+    "healthy": false,
+    "last_checked": "2026-06-12T00:27:39Z",
+    "last_error": "not-initialized"
+  },
+  "intent": "literal",
+  "last_event_id": "event-000007",
+  "last_message_hash": "2516e8b6ef76a439",
+  "last_message_length": 399,
+  "memory_logged": true,
+  "orchestration": {
+    "max_state_retries": 3,
+    "retry_backoff_seconds": 10
+  },
+  "parent_session_id": null,
+  "plans": {
+    "completed_tasks": 0,
+    "exists": false,
+    "last_modified": 0,
+    "pending_tasks": 0,
+    "todo_tasks": 0,
+    "wip_tasks": 0
+  },
+  "project_name": "hermes_agent_dashboard",
+  "prompt_seq": 4,
+  "resume_token": "resume-1781224059949254500",
+  "session_id": "session-1781224059949254500",
+  "started_at": "2026-06-12T00:27:39Z",
+  "state": "stopped",
+  "state_version": 1,
+  "updated_at": "2026-06-12T00:28:32Z"
+}

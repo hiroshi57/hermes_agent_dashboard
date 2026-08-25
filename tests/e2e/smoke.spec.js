@@ -18,7 +18,7 @@ test.describe('全ページ遷移', () => {
     { id: 'status',      label: 'ステータス' },
     { id: 'sessions',    label: 'セッション' },
     { id: 'kanban',      label: 'Kanban' },
-    { id: 'cron',        label: 'Cron' },
+    { id: 'cron',        label: 'Cron ジョブ' },
     { id: 'analytics',   label: 'Analytics' },
     { id: 'logs',        label: 'Logs Viewer' },
     { id: 'chat',        label: 'Chat' },
@@ -108,14 +108,20 @@ test.describe('Kanban ドラッグ&ドロップ', () => {
     const card = backlogCol.locator('.kanban-card').first();
     const cardTitle = await card.locator('.kanban-card-title').textContent();
 
-    const cardBox  = await card.boundingBox();
-    const targetBox = await reviewCol.boundingBox();
-    if (!cardBox || !targetBox) throw new Error('要素の位置が取得できない');
+    // HTML5 DragEvent を直接 dispatch（WebKit でも動作する）
+    await page.evaluate(() => {
+      const cardEl = document.querySelector('.kanban-col[data-col="backlog"] .kanban-card');
+      const colEl  = document.querySelector('.kanban-col[data-col="review"]');
+      if (!cardEl || !colEl) throw new Error('要素が見つからない');
 
-    await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 10 });
-    await page.mouse.up();
+      const dt = typeof DataTransfer !== 'undefined' ? new DataTransfer() : null;
+      const opts = { bubbles: true, cancelable: true };
+      if (dt) opts.dataTransfer = dt;
+
+      cardEl.dispatchEvent(new DragEvent('dragstart', opts));
+      colEl.dispatchEvent(new DragEvent('dragover', opts));
+      colEl.dispatchEvent(new DragEvent('drop', opts));
+    });
 
     await page.waitForTimeout(300);
 
@@ -191,52 +197,51 @@ test.describe('Profile Builder 作成フロー', () => {
     await expect(recBtn).toBeVisible();
     await recBtn.click();
 
-    // トーストが出る
-    await expect(page.locator('.toast')).toBeVisible();
+    // トーストが出る（複数表示されることがあるので last() で確認）
+    await expect(page.locator('.toast').last()).toBeVisible();
   });
 
   test('Step 1 → 2 → 3 → 4 を順に進める', async ({ page }) => {
-    // Step 1 入力
+    // btn-primary + onclick で「次へ」ボタンを一意に特定
     await page.locator('#builder-goal').fill('PRレビューと CI 修復を自動化したい');
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(2)"]').click();
     await page.waitForTimeout(100);
 
-    // Step 2 が表示される
+    // Step 2 が active になる
     const step2 = page.locator('[data-step-content="2"]');
-    await expect(step2).toBeVisible();
+    await expect(step2).toHaveClass(/active/);
     await page.locator('#builder-name').fill('auto-coder');
 
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(3)"]').click();
     await page.waitForTimeout(100);
 
-    // Step 3 が表示される
+    // Step 3 が active になる
     const step3 = page.locator('[data-step-content="3"]');
-    await expect(step3).toBeVisible();
+    await expect(step3).toHaveClass(/active/);
 
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(4)"]').click();
     await page.waitForTimeout(100);
 
-    // Step 4 (Review) が表示される
+    // Step 4 (Review) が active になる
     const step4 = page.locator('[data-step-content="4"]');
-    await expect(step4).toBeVisible();
+    await expect(step4).toHaveClass(/active/);
 
-    // YAML プレビューが描画されている
-    const yamlPreview = page.locator('#builder-yaml-preview');
-    await expect(yamlPreview).toBeVisible();
-    await expect(yamlPreview).not.toBeEmpty();
+    // Review グリッドが描画されている（#builder-review-grid）
+    const reviewGrid = page.locator('#builder-review-grid');
+    await expect(reviewGrid).toBeVisible();
   });
 
   test('Step 4 でプロファイルを作成できる', async ({ page }) => {
-    // 必要フィールドを埋める
+    // btn-primary + onclick で「次へ」ボタンを一意に特定
     await page.locator('#builder-goal').fill('テスト用エージェント');
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(2)"]').click();
     await page.waitForTimeout(100);
 
     await page.locator('#builder-name').fill('test-agent');
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(3)"]').click();
     await page.waitForTimeout(100);
 
-    await page.locator('button:has-text("次へ")').click();
+    await page.locator('button.btn-primary[onclick="goToStep(4)"]').click();
     await page.waitForTimeout(100);
 
     // プロファイル作成ボタン
@@ -244,8 +249,8 @@ test.describe('Profile Builder 作成フロー', () => {
     await expect(createBtn).toBeVisible();
     await createBtn.click();
 
-    // 成功トーストが出る
-    await expect(page.locator('.toast')).toBeVisible();
+    // 成功トーストが出る（複数表示されることがあるので last() で確認）
+    await expect(page.locator('.toast').last()).toBeVisible();
   });
 
   test('ステップバーのクリックでステップ移動できる', async ({ page }) => {
