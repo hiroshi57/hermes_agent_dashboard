@@ -120,7 +120,23 @@ async function build() {
 
   fs.writeFileSync(path.join(DIST, 'index.html'), optimizedHtml, 'utf8');
 
-  // 8. サマリー
+  // 8. OpenMythos デモアセットを dist にコピー
+  //    vercel.json の outputDirectory: "dist" に合わせて、
+  //    openmythos-demo.html と assets/openmythos-client.js を dist に含める
+  const demoSrc = path.join(__dirname, 'openmythos-demo.html');
+  if (fs.existsSync(demoSrc)) {
+    fs.copyFileSync(demoSrc, path.join(DIST, 'openmythos-demo.html'));
+    console.log('  → dist/openmythos-demo.html');
+  }
+  const assetsDistDir = path.join(DIST, 'assets');
+  fs.mkdirSync(assetsDistDir, { recursive: true });
+  const clientSrc = path.join(__dirname, 'assets', 'openmythos-client.js');
+  if (fs.existsSync(clientSrc)) {
+    fs.copyFileSync(clientSrc, path.join(assetsDistDir, 'openmythos-client.js'));
+    console.log('  → dist/assets/openmythos-client.js');
+  }
+
+  // 10. サマリー
   const origSize  = html.length;
   const distHtml  = optimizedHtml.length;
   const distTotal = distHtml + minCss.length + minJs.length;
@@ -133,7 +149,7 @@ async function build() {
   console.log(`     ${jsFile}:  ${Math.round(minJs.length/1024)}KB`);
   console.log(`   削減率:       ${Math.round((1 - distTotal/origSize)*100)}%`);
 
-  // 9. ファイル名マップを書き出す（vercel.json のキャッシュ設定用）
+  // 11. ファイル名マップを書き出す（vercel.json のキャッシュ設定用）
   fs.writeFileSync(
     path.join(DIST, 'asset-manifest.json'),
     JSON.stringify({ cssFile, jsFile, built: new Date().toISOString() }, null, 2)

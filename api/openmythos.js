@@ -24,11 +24,29 @@ const ALLOW_PREFIXES = [
 
 const ALLOW_METHODS = ['GET', 'POST'];
 
-function isAllowedPath(path) {
-  if (typeof path !== 'string' || !path.startsWith('/v1/')) return false;
-  // パストラバーサル除去
-  if (path.includes('..')) return false;
-  return ALLOW_PREFIXES.some((p) => path === p || path.startsWith(p + '/') || path.startsWith(p));
+function isAllowedPath(rawPath) {
+  if (typeof rawPath !== 'string') return false;
+
+  // 二重URLエンコード (%252e%252e 等) を含むトラバーサルを防ぐため
+  // decodeURIComponent を最大2回適用して正規化する
+  let path = rawPath;
+  try { path = decodeURIComponent(path); } catch { return false; }
+  try { path = decodeURIComponent(path); } catch { /* 1回で十分 */ }
+
+  // ドットセグメントを除去（/ で分割→ . / .. を解決→再結合）
+  const segments = path.split('/').reduce((acc, seg) => {
+    if (seg === '..') { acc.pop(); }
+    else if (seg !== '.') { acc.push(seg); }
+    return acc;
+  }, []);
+  const normalized = '/' + segments.filter(Boolean).join('/');
+
+  if (!normalized.startsWith('/v1/')) return false;
+  if (normalized.includes('..')) return false; // 念のため再チェック
+
+  return ALLOW_PREFIXES.some(
+    (p) => normalized === p || normalized.startsWith(p + '/') || normalized.startsWith(p)
+  );
 }
 
 module.exports = async function handler(req, res) {
@@ -44,13 +62,22 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const path = req.query && req.query.path;
-  if (!isAllowedPath(path)) {
-    res.status(400).json({ error: `許可されていない path です: ${path}`, allowed: ALLOW_PREFIXES });
+  const rawPath = req.query && req.query.path;
+  if (!isAllowedPath(rawPath)) {
+    res.status(400).json({ error: `許可されていない path です: ${rawPath}`, allowed: ALLOW_PREFIXES });
     return;
   }
 
-  const target = baseUrl.replace(/\/+$/, '') + path;
+  // forward には正規化済みパスを使う（エンコード済み文字列をそのまま渡さない）
+  let normalizedPath = rawPath;
+  try { normalizedPath = decodeURIComponent(normalizedPath); } catch { /* ignore */ }
+  try { normalizedPath = decodeURIComponent(normalizedPath); } catch { /* ignore */ }
+  normalizedPath = '/' + normalizedPath.split('/').reduce((acc, seg) => {
+    if (seg === '..') { acc.pop(); } else if (seg !== '.') { acc.push(seg); }
+    return acc;
+  }, []).filter(Boolean).join('/');
+
+  const target = baseUrl.replace(/\/+$/, '') + normalizedPath;
 
   const headers = { 'Content-Type': 'application/json' };
   if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
