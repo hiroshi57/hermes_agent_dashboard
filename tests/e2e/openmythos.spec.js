@@ -29,6 +29,17 @@ test.describe('openmythos プロキシ allow-list', () => {
     // @ts-expect-error 故意に型違反を渡す
     expect(proxy.isAllowedPath(123)).toBe(false);
   });
+
+  test('URLエンコードされたトラバーサル (%2e%2e / %252e%252e) は拒否', () => {
+    // シングルエンコード: %2e%2e → .. → トラバーサル
+    expect(proxy.isAllowedPath('/v1/llmo/%2e%2e/admin/keys')).toBe(false);
+    expect(proxy.isAllowedPath('/v1/campaign/%2e%2e/%2e%2e/etc/passwd')).toBe(false);
+    // 二重エンコード: %252e%252e → %2e%2e → .. → トラバーサル
+    expect(proxy.isAllowedPath('/v1/llmo/%252e%252e/admin/keys')).toBe(false);
+    expect(proxy.isAllowedPath('/v1/abtest/%252e%252e/%252e%252e/env')).toBe(false);
+    // 正常なエンコードパスは通す
+    expect(proxy.isAllowedPath('/v1/llmo/dashboard/acme%20brand')).toBe(true);
+  });
 });
 
 // ============================================================

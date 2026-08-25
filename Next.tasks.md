@@ -7,34 +7,33 @@
 
 ## 進行中
 
-（なし — P1完了。P3: Lighthouse 計測が次タスク）
+（なし）
 
 ---
 
 ## 未着手
 
-### P1: 品質・信頼性（要実機）
+### P1: セキュリティ・信頼性
 
-- [x] **実ブラウザでの動作検証** ← 完了
-  - Playwright で Chromium / Firefox / WebKit (Safari) 3ブラウザ対応
-  - 全34テスト PASS（コンソールエラーゼロ確認済み）
-  - 修正: Cron タイトル / Profile Builder セレクタ / D&D を DragEvent dispatch 方式に統一
-- [x] **モバイル実機での表示確認** ← 完了
-  - Playwright で iPhone 13 (iOS WebKit) + Pixel 5 (Android Chrome) エミュレーション追加
-  - mobile.spec.js 新規作成（4シナリオ・12テスト × 2デバイス = 24テスト PASS）
-  - タッチD&D・タップ操作・全ページ遷移・Analytics/Chat/Skills/Builder 動作確認済み
+- [ ] **Vercel env の本番設定確認**（`OPENMYTHOS_BASE_URL` / `OPENMYTHOS_API_KEY`）
+  - 未設定のままだと OpenMythos 連携が 500 を返す
+  - Vercel Project Settings → Environment Variables で設定する
 
 ### P2: 機能拡張
 
-- [x] **チャット（TUI埋め込み）ページの追加** ← 完了
-- [x] **E2E スモークテストの追加** ← 完了
+- [ ] **PR #2 マージ → main へのリリース**
+  - `feature/v2-full-rewrite` を main へマージ
+  - 本番 URL https://hermesagentdashboard.vercel.app に反映
+- [ ] **パフォーマンス計測**（Lighthouse 90点以上を維持）
+  - 現状スコア未計測（build後の dist を対象に計測する）
+- [ ] **OpenMythos デモページのリンクを index.html に追加**
+  - `/openmythos-demo.html` は公開済みだがナビから辿れない
 
 ### P3: 磨き込み
 
-- [x] **キーボードナビゲーション強化** ← 完了
-- [x] **OGP・favicon の追加** ← 完了
-- [x] **i18n 対応** ← 完了
-- [ ] **パフォーマンス計測**（Lighthouse 90点以上を維持）
+- [ ] **README.md に PR #2 / OpenMythos 連携の説明を追記**
+- [ ] **lh-v3.json / lighthouse-report*.json をリポジトリから削除**
+  - 成果物ファイルが root に散らばっている → docs/ 以下に整理するか .gitignore に追加
 
 ---
 
