@@ -52,5 +52,12 @@ module.exports = defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: '**/openmythos.spec.js',
     },
+
+    // ── 型付きスキル提案 (chromium のみ・API はモック) ──────
+    {
+      name: 'skill-suggest',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/skill-suggest.spec.js',
+    },
   ],
 });

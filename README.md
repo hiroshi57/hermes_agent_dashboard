@@ -66,6 +66,24 @@ const BRAND_CONFIG = {
 サンプルデータはすべて `DEMO_DATA` セクションにまとまっています。
 スキーマコメント付きで自分のデータへの差し替えが容易です。
 
+### AI スキル推薦（`SKILL_SUGGEST_CONFIG`）
+
+Profile Builder の「AIが推薦する」は、既定では目的文のキーワード（`REC_RULES`）で推薦する。
+スキル提案 API（別リポジトリ・Private の typed-decision-layer）を設定すると、LLM による
+型付き判断（全件ランク → 上位候補を1件ずつ適合判定）でスキルとエージェント種別を推薦する。
+
+```js
+// index.html 内、または読み込み前に window.SKILL_SUGGEST_CONFIG を定義して上書き
+window.SKILL_SUGGEST_CONFIG = {
+  endpoint: 'https://<API をデプロイした URL>/api/skill_suggest',  // 空なら API を呼ばない
+  timeoutMs: 8000,
+};
+```
+
+- API の失敗・タイムアウト・不正な応答・全候補却下のときは、自動でルール推薦に戻る（トーストに「ルール推薦」と出る）。
+- 応答の skill id は `BUILDER_SKILLS` にあるものだけを採用する。MCP の推薦は従来どおりルールで行う。
+- endpoint を設定すると、入力した目的文とスキル一覧（id・説明）が API 経由で LLM に送られる。機密情報を目的文に書かないこと。
+
 ## 技術仕様
 
 - **Vanilla JS** — フレームワーク不使用・ビルド不要

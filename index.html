@@ -4826,52 +4826,115 @@ const REC_RULES = [
    skills:['web-research'],mcps:['slack'],type:'single'},
 ];
 
-function generateRecommendations() {
-  const goal = (state.builderData.goal||'').toLowerCase();
-  if (!goal.trim()) { showToast('目的・課題を入力してから推薦を実行してください','warn'); return; }
+/* ----------------------------------------------------------------
+   型付きスキル提案 (typed-decision-layer の /api/skill_suggest)
+   - endpoint 未設定なら呼ばない (REC_RULES のルール推薦だけで動く)
+   - 失敗・タイムアウト・不正応答はすべてルール推薦へフォールバック
+   - 応答の skill id は BUILDER_SKILLS に存在するものだけ採用する
+   - MCP の推薦は従来どおり REC_RULES で行う
+---------------------------------------------------------------- */
+window.SKILL_SUGGEST_CONFIG = Object.assign(
+  { endpoint: '', timeoutMs: 8000 },
+  window.SKILL_SUGGEST_CONFIG || {}
+);
 
-  let recSkills = new Set();
-  let recMcps   = new Set();
-  let recType   = 'single';
-  let matched   = 0;
+function ruleBasedRecommendations(goal) {
+  const skills = new Set();
+  const mcps   = new Set();
+  let type     = 'single';
+  let matched  = 0;
 
   for (const rule of REC_RULES) {
     const hit = rule.kw.some(k => goal.includes(k));
     if (!hit) continue;
     matched++;
-    rule.skills.forEach(s => recSkills.add(s));
-    rule.mcps.forEach(m => recMcps.add(m));
-    if (rule.type === 'multi') recType = 'multi';
+    rule.skills.forEach(s => skills.add(s));
+    rule.mcps.forEach(m => mcps.add(m));
+    if (rule.type === 'multi') type = 'multi';
   }
 
   if (matched === 0) {
     // デフォルト推薦
-    recSkills.add('web-research');
-    recSkills.add('document-writer');
-    recMcps.add('notion');
+    skills.add('web-research');
+    skills.add('document-writer');
+    mcps.add('notion');
   }
+  return { skills: [...skills], mcps: [...mcps], type };
+}
 
-  // マルチエージェントならオーケストレーター系を追加
-  if (recType === 'multi') {
-    recSkills.add('kanban-orchestrator');
-    recSkills.add('kanban-worker');
+async function fetchTypedSkillSuggestion(goal) {
+  const cfg = window.SKILL_SUGGEST_CONFIG || {};
+  if (!cfg.endpoint) return null;
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), cfg.timeoutMs || 8000);
+  try {
+    const res = await fetch(cfg.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        goal,
+        skills: BUILDER_SKILLS.map(s => ({ id: s.id, desc: s.desc })),
+      }),
+      signal: ctrl.signal,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || data.fallback !== false || !Array.isArray(data.suggested)) return null;
+    const known  = new Set(BUILDER_SKILLS.map(s => s.id));
+    const skills = data.suggested.filter(id => typeof id === 'string' && known.has(id));
+    const multi  = typeof data.multi_agent === 'number' ? data.multi_agent : null;
+    return { skills, multiAgent: multi };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
+}
 
-  // state に反映 (既存選択は上書き)
-  state.builderData.agentType = recType;
-  state.builderData.skills    = [...recSkills];
-  state.builderData.mcps      = [...recMcps];
+let recommendationInFlight = false;
 
-  // UI 更新
-  selectAgentType(recType);
-  updateYAMLPreview();
+async function generateRecommendations() {
+  const rawGoal = (state.builderData.goal || '').trim();
+  const goal    = rawGoal.toLowerCase();
+  if (!goal) { showToast('目的・課題を入力してから推薦を実行してください','warn'); return; }
+  if (recommendationInFlight) return;
+  recommendationInFlight = true;
 
-  const typeLabel = recType === 'multi' ? 'マルチエージェント' : 'シングルエージェント';
-  showToast(
-    `推薦完了: ${typeLabel}`,
-    'success',
-    `Skills ${[...recSkills].length}件・MCP ${[...recMcps].length}件を事前選択しました。Step 3 で変更できます。`
-  );
+  try {
+    const rule  = ruleBasedRecommendations(goal);
+    const typed = await fetchTypedSkillSuggestion(rawGoal);
+    const useTyped = !!(typed && typed.skills.length > 0);
+
+    const recSkills = new Set(useTyped ? typed.skills : rule.skills);
+    const recMcps   = new Set(rule.mcps);
+    let recType = rule.type;
+    if (useTyped && typed.multiAgent !== null) recType = typed.multiAgent >= 0.5 ? 'multi' : 'single';
+
+    // マルチエージェントならオーケストレーター系を追加
+    if (recType === 'multi') {
+      recSkills.add('kanban-orchestrator');
+      recSkills.add('kanban-worker');
+    }
+
+    // state に反映 (既存選択は上書き)
+    state.builderData.agentType = recType;
+    state.builderData.skills    = [...recSkills];
+    state.builderData.mcps      = [...recMcps];
+    state.builderData.recommendationSource = useTyped ? 'typed' : 'rule';
+
+    // UI 更新
+    selectAgentType(recType);
+    updateYAMLPreview();
+
+    const typeLabel   = recType === 'multi' ? 'マルチエージェント' : 'シングルエージェント';
+    const sourceLabel = useTyped ? 'AI判定' : 'ルール推薦';
+    showToast(
+      `推薦完了: ${typeLabel}（${sourceLabel}）`,
+      'success',
+      `Skills ${recSkills.size}件・MCP ${recMcps.size}件を事前選択しました。Step 3 で変更できます。`
+    );
+  } finally {
+    recommendationInFlight = false;
+  }
 }
 
 function selectAgentType(type) {
